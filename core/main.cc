@@ -53,6 +53,7 @@ int main(int argc, char *argv[]) {
   google::ParseCommandLineFlags(&argc, &argv, true);
   bess::bessd::ProcessCommandLineArgs();
   bess::bessd::CheckRunningAsRoot();
+  LOG(ERROR) << sizeof(bess::Packet) << " " << SNBUF_SIZE;
 
   int pidfile_fd = bess::bessd::CheckUniqueInstance(FLAGS_i);
   ignore_result(bess::bessd::SetResourceLimit());

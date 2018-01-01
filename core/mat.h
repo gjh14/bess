@@ -3,7 +3,7 @@
 
 #include <map>
 #include <string>
-//#include <unordered_map>
+// #include <unordered_map>
 
 #include "path.h"
 
@@ -14,7 +14,7 @@ class MAT {
   bool checkMAT(bess::Packet *pkt);
 
  private:
-//  std::unordered_map<std:string, Path *> mat;
+  // std::unordered_map<std:string, Path *> mat;
   std::map<std::string, Path *> mat;
   
   void appendData(std::string *fid, uint32_t num, int len);
