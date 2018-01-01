@@ -88,7 +88,7 @@
           # The latest release, 2.3.3 from Oct 2016, has a inet_ntop bug
           # that was fixed in a Jan 2017 commit.
           # TODO: Once v2.3.4 is released, install from pypi rather than git repo.
-          - git+https://github.com/secdev/scapy
+#          - git+https://github.com/secdev/scapy
         editable: false
       become: true
 
@@ -99,28 +99,28 @@
     - name: sudo ldconfig
       shell: ldconfig
       become: true
+    
+#    - name: Download gRPC
+#      git: repo=https://github.com/google/grpc dest=/tmp/grpc accept_hostkey=yes version=v1.3.2
 
-    - name: Download gRPC
-      git: repo=https://github.com/google/grpc dest=/tmp/grpc accept_hostkey=yes version=v1.3.2
+#    - name: Compile gRPC and its dependencies
+#      shell: make -j{{ ansible_processor_vcpus }} HAS_SYSTEM_PROTOBUF=false chdir=/tmp/grpc
 
-    - name: Compile gRPC and its dependencies
-      shell: make -j{{ ansible_processor_vcpus }} HAS_SYSTEM_PROTOBUF=false chdir=/tmp/grpc
+#    - name: Install gRPC
+#      shell: make install chdir=/tmp/grpc
+#      become: true
 
-    - name: Install gRPC
-      shell: make install chdir=/tmp/grpc
-      become: true
+#    - name: Install protobuf
+#      shell: make install chdir=/tmp/grpc/third_party/protobuf
+#      become: true
 
-    - name: Install protobuf
-      shell: make install chdir=/tmp/grpc/third_party/protobuf
-      become: true
+#    - name: Generate makefile for libbenchmark
+#      shell: cmake . chdir=/tmp/grpc/third_party/benchmark
 
-    - name: Generate makefile for libbenchmark
-      shell: cmake . chdir=/tmp/grpc/third_party/benchmark
-
-    - name: Install libbenchmark
-      shell: make install chdir=/tmp/grpc/third_party/benchmark
-      become: true
-
+#    - name: Install libbenchmark
+#      shell: make install chdir=/tmp/grpc/third_party/benchmark
+#      become: true
+    
     - name: sudo ldconfig
       shell: ldconfig
       become: true

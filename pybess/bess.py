@@ -54,7 +54,7 @@ if bipath not in sys.path:
     sys.path.insert(1, bipath)
 del bipath
 
-from .builtin_pb import service_pb2
+from .builtin_pb import service_pb2_grpc
 from .builtin_pb import bess_msg_pb2 as bess_msg
 from .builtin_pb import module_msg_pb2 as module_msg
 
@@ -193,7 +193,7 @@ class BESS(object):
         self.peer = (host, port)
         self.channel = grpc.insecure_channel('%s:%d' % (host, port))
         self.channel.subscribe(self._update_status, try_to_connect=True)
-        self.stub = service_pb2.BESSControlStub(self.channel)
+        self.stub = service_pb2_grpc.BESSControlStub(self.channel)
 
         while not self.is_connected():
             if self.status in [grpc.ChannelConnectivity.TRANSIENT_FAILURE,
