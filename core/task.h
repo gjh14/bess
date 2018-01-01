@@ -33,7 +33,6 @@
 
 #include <string>
 
-#include "module.h"
 #include "mat.h"
 
 struct task_result {
@@ -49,6 +48,7 @@ class Module;
 
 namespace bess {
 class LeafTrafficClass;
+class PacketBatch;
 }  // namespace bess
 
 // Functor used by a leaf in a Worker's Scheduler to run a task in a module.
@@ -66,7 +66,7 @@ class Task {
 
   bess::LeafTrafficClass *GetTC() const { return c_; }
 
-  struct task_result operator()(void) const;
+  struct task_result operator()(void);
 
   /*!
    * Compute constraints for the pipeline starting at this task.
@@ -93,7 +93,6 @@ class Task {
   
   // GMAT
   MAT gmat;
-  void Task::collect(bess::PacketBatch *batch, Moudule *module)
 };
 
 #endif  // BESS_TASK_H_

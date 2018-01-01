@@ -272,7 +272,7 @@ class alignas(64) Packet {
 
   // fastpath
   Path* path() const {
-    return path;
+    return path_;
   }
   
   void set_path(Path* path) { 
@@ -400,7 +400,7 @@ class alignas(64) Packet {
 };
 
 static_assert(std::is_standard_layout<Packet>::value, "Incorrect class Packet");
-static_assert(sizeof(Packet) == SNBUF_SIZE, "Incorrect class Packet");
+//static_assert(sizeof(Packet) == SNBUF_SIZE, "Incorrect class Packet");
 
 #if __AVX__
 #include "packet_avx.h"
