@@ -33,6 +33,9 @@
 
 #include <string>
 
+#include "module.h"
+#include "mat.h"
+
 struct task_result {
   bool block;
   uint32_t packets;
@@ -76,12 +79,22 @@ class Task {
   void AddActiveWorker(int wid) const;
 
   Module *module() const { return module_; }
+  
+  /*!
+   * GMAT
+   */
+  void collect(bess::PacketBatch *batch, Module *module);
 
  private:
   // Used by operator().
   Module *module_;
   void *arg_;                  // Auxiliary value passed to Module::RunTask().
   bess::LeafTrafficClass *c_;  // Leaf TC associated with this task.
+  
+  // GMAT
+  MAT gmat;
+  void Task::collect(bess::PacketBatch *batch, Moudule *module)
 };
 
 #endif  // BESS_TASK_H_
+

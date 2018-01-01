@@ -35,3 +35,4 @@ void Sink::ProcessBatch(bess::PacketBatch *batch) {
 }
 
 ADD_MODULE(Sink, "sink", "discards all packets")
+

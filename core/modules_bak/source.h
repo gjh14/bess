@@ -28,19 +28,32 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef BESS_MODULES_SINK_H_
-#define BESS_MODULES_SINK_H_
+#ifndef BESS_MODULES_FLOWGEN_H_
+#define BESS_MODULES_FLOWGEN_H_
 
 #include "../module.h"
+#include "../pb/module_msg.pb.h"
 
-class Sink final : public Module {
+class Source final : public Module {
  public:
-  Sink() { max_allowed_workers_ = Worker::kMaxWorkers; }
+  static const gate_idx_t kNumIGates = 0;
 
-  static const gate_idx_t kNumOGates = 0;
+  static const Commands cmds;
 
-  void ProcessBatch(bess::PacketBatch *batch) override;
+  Source() : Module(), pkt_size_(), burst_() { is_task_ = true; }
+
+  CommandResponse Init(const bess::pb::SourceArg &arg);
+
+  struct task_result RunTask(void *arg) override;
+
+  CommandResponse CommandSetBurst(
+      const bess::pb::SourceCommandSetBurstArg &arg);
+  CommandResponse CommandSetPktSize(
+      const bess::pb::SourceCommandSetPktSizeArg &arg);
+
+ private:
+  int pkt_size_;
+  int burst_;
 };
 
-#endif  // BESS_MODULES_SINK_H_
-
+#endif  // BESS_MODULES_FLOWGEN_H_

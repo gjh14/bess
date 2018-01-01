@@ -43,4 +43,3 @@ class Sink final : public Module {
 };
 
 #endif  // BESS_MODULES_SINK_H_
-

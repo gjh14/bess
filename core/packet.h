@@ -42,6 +42,7 @@
 
 #include "mem_alloc.h"
 #include "metadata.h"
+#include "path.h"
 #include "snbuf_layout.h"
 #include "worker.h"
 
@@ -269,6 +270,15 @@ class alignas(64) Packet {
   // batch must not be nullptr
   static void Free(PacketBatch *batch) { Free(batch->pkts(), batch->cnt()); }
 
+  // fastpath
+  Path* path() const {
+    return path;
+  }
+  
+  void set_path(Path* path) { 
+    path_ = path;
+  }
+  
  private:
   union {
     struct {
@@ -384,6 +394,9 @@ class alignas(64) Packet {
 
   char headroom_[SNBUF_HEADROOM];
   char data_[SNBUF_DATA];
+  
+  // fastpath
+  Path* path_;
 };
 
 static_assert(std::is_standard_layout<Packet>::value, "Incorrect class Packet");

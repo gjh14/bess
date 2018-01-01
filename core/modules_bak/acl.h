@@ -1,4 +1,3 @@
-// Copyright (c) 2014-2016, The Regents of the University of California.
 // Copyright (c) 2016-2017, Nefeli Networks, Inc.
 // All rights reserved.
 //
@@ -28,19 +27,48 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef BESS_MODULES_SINK_H_
-#define BESS_MODULES_SINK_H_
+#ifndef BESS_MODULES_ACL_H_
+#define BESS_MODULES_ACL_H_
+
+#include <vector>
 
 #include "../module.h"
+#include "../pb/module_msg.pb.h"
+#include "../utils/ip.h"
 
-class Sink final : public Module {
+using bess::utils::be16_t;
+using bess::utils::be32_t;
+using bess::utils::Ipv4Prefix;
+
+class ACL final : public Module {
  public:
-  Sink() { max_allowed_workers_ = Worker::kMaxWorkers; }
+  struct ACLRule {
+    bool Match(be32_t sip, be32_t dip, be16_t sport, be16_t dport) const {
+      return src_ip.Match(sip) && dst_ip.Match(dip) &&
+             (src_port == be16_t(0) || src_port == sport) &&
+             (dst_port == be16_t(0) || dst_port == dport);
+    }
 
-  static const gate_idx_t kNumOGates = 0;
+    Ipv4Prefix src_ip;
+    Ipv4Prefix dst_ip;
+    be16_t src_port;
+    be16_t dst_port;
+    bool drop;
+  };
+
+  static const Commands cmds;
+
+  ACL() : Module() { max_allowed_workers_ = Worker::kMaxWorkers; }
+
+  CommandResponse Init(const bess::pb::ACLArg &arg);
 
   void ProcessBatch(bess::PacketBatch *batch) override;
+
+  CommandResponse CommandAdd(const bess::pb::ACLArg &arg);
+  CommandResponse CommandClear(const bess::pb::EmptyArg &arg);
+
+ private:
+  std::vector<ACLRule> rules_;
 };
 
-#endif  // BESS_MODULES_SINK_H_
-
+#endif  // BESS_MODULES_ACL_H_

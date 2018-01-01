@@ -45,7 +45,7 @@ void Task::Attach(bess::LeafTrafficClass *c) {
 }
 
 struct task_result Task::operator()(void) const {
-  return module_->RunTask(arg_);
+  return module_->RunTask(this, arg_);
 }
 
 /*!
@@ -68,3 +68,24 @@ void Task::AddActiveWorker(int wid) const {
     module_->AddActiveWorker(wid, c_->task());
   }
 }
+
+/*!
+ * GMAT
+ */
+void Task::collect(bess::PacketBatch *batch, Moudule *module) {
+  bess::Batch hits;
+  hits.clear();
+  bess::Batch unhits;
+  unhits.clear();
+  int cnt = batch->cnt();
+  for (int i = 0; i < cnt; ++i) {
+  	bess::Packet *pkt = batch->pkts()[i];
+    if (gmat.checkMAT(pkt))
+   	  hits.append(pkt);
+    else
+      unhits.append(pkt)
+  }
+  bess::Packet::Free(hits);
+  RunNextModule(this, &unhits);
+}
+

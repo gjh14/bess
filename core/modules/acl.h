@@ -69,6 +69,10 @@ class ACL final : public Module {
 
  private:
   std::vector<ACLRule> rules_;
+  
+  bool stateAction(bess:Packet *pkt);
+  void updateAction(bess:Packet *pkt);
 };
 
 #endif  // BESS_MODULES_ACL_H_
+

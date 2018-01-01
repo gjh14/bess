@@ -210,7 +210,7 @@ class alignas(64) Module {
   // NOTE: this function will be called even if Init() has failed.
   virtual void DeInit();
 
-  virtual struct task_result RunTask(void *arg);
+  virtual struct task_result RunTask(Task *task, void *arg);
   virtual void ProcessBatch(bess::PacketBatch *batch);
 
   // If a derived Module overrides OnEvent and doesn't return  -ENOTSUP for a

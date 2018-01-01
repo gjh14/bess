@@ -90,23 +90,8 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
         break;  // Stop matching other rules
       }
     }
-    
-    if(out_gates[i] == DROP_GATE){
-      HeadAction action;
-      action.type = HeadAction::DROP;
-      pkt->path->append(action, stateAction, updateAction);
-    }
   }
   RunSplit(out_gates, batch);
 }
 
-bool ACL::stateAction(bess::Packet *pkt){
-  return false;
-}
-
-bool ACL::updateAction(bess:Packet *pkt){
-
-}
-
 ADD_MODULE(ACL, "acl", "ACL module from NetBricks")
-

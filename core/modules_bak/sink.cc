@@ -28,19 +28,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef BESS_MODULES_SINK_H_
-#define BESS_MODULES_SINK_H_
+#include "sink.h"
 
-#include "../module.h"
+void Sink::ProcessBatch(bess::PacketBatch *batch) {
+  bess::Packet::Free(batch);
+}
 
-class Sink final : public Module {
- public:
-  Sink() { max_allowed_workers_ = Worker::kMaxWorkers; }
-
-  static const gate_idx_t kNumOGates = 0;
-
-  void ProcessBatch(bess::PacketBatch *batch) override;
-};
-
-#endif  // BESS_MODULES_SINK_H_
-
+ADD_MODULE(Sink, "sink", "discards all packets")
