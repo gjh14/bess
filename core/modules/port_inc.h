@@ -28,27 +28,39 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "sink.h"
+#ifndef BESS_MODULES_PORTINC_H_
+#define BESS_MODULES_PORTINC_H_
 
-void Sink::ProcessBatch(bess::PacketBatch *batch) {
-  int cnt = batch->cnt();
-  for(int i = 0; i < cnt; ++i){
-    HeadAction head;
-    head.type = HeadAction::DROP;
-    StateAction state;
-    state.type = StateAction::UNRELATE;
-    state.action = 
-      [&](bess::Packet *pkt[[maybe_unused]]) -> bool {
-        return false;
-      };
-    auto update = 
-      [&](bess::Packet *unit) {
-        ProcessBatch(unit);
-      };
-    batch->path()->appendRule(head, state, update);
+#include "../module.h"
+#include "../pb/module_msg.pb.h"
+#include "../port.h"
+
+class PortInc final : public Module {
+ public:
+  static const gate_idx_t kNumIGates = 0;
+
+  static const Commands cmds;
+
+  PortInc() : Module(), port_(), prefetch_(), burst_() {
+    is_task_ = true;
+    max_allowed_workers_ = Worker::kMaxWorkers;
   }
-  bess::Packet::Free(batch);
-}
 
-ADD_MODULE(Sink, "sink", "discards all packets")
+  CommandResponse Init(const bess::pb::PortIncArg &arg);
 
+  void DeInit() override;
+
+  struct task_result RunTask(Task *task, void *arg) override;
+
+  std::string GetDesc() const override;
+
+  CommandResponse CommandSetBurst(
+      const bess::pb::PortIncCommandSetBurstArg &arg);
+
+ private:
+  Port *port_;
+  int prefetch_;
+  int burst_;
+};
+
+#endif  // BESS_MODULES_PORTINC_H_

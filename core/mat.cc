@@ -14,18 +14,17 @@ MAT::~MAT() {
     delete it.second;
 }
 
-void MAT::appendData(std::string *fid, uint32_t num, int len){
+void MAT::appendData(std::string &fid, uint32_t num, int len){
   for (int i = 0; i < len; ++i){
-    fid->push_back(num & 255);
-      num >>= 8;
+    fid.push_back(num & 255);
+    num >>= 8;
   }
 }
 
-std::string* MAT::getFID(bess::Packet *pkt) {
+void MAT::getFID(bess::Packet *pkt, std::string &fid) {
   using bess::utils::Ethernet;
   using bess::utils::Ipv4;
   using bess::utils::Udp;
-  std::string *fid = new std::string();
   Ethernet *eth = pkt->head_data<Ethernet *>();
   Ipv4 *ip = reinterpret_cast<Ipv4 *>(eth + 1);
   size_t ip_bytes = ip->header_length << 2;
@@ -35,19 +34,21 @@ std::string* MAT::getFID(bess::Packet *pkt) {
   appendData(fid, ip->dst.raw_value(), 4);
   appendData(fid, udp->src_port.raw_value(), 2);
   appendData(fid, udp->dst_port.raw_value(), 2);
-  return fid;
 }
 
-bool MAT::checkMAT(bess::Packet *pkt, Path *&path){
-  std::string *fid = getFID(pkt);
-  if (mat.count(*fid)) {
-    path = mat[*fid];
-    path->handlePkt(pkt);
-    delete fid;
+bool MAT::checkMAT(bess::PacketBatch *unit){
+  bess:PacketBatch = unit->pkts[0];
+  std::string fid;
+  getFID(pkt, fid);
+  if (mat.count(fid)) {
+    Path *path = mat[fid];
+    unit->set_path(path);
+    path->handlePkt(unit);
     return true;
   }
-  mat[*fid] = path = new Path();
-  delete fid;
+  Path *path = new Path();
+  mat[fid] = path;
+  unit->set_path(path);
   return false;
 }
 

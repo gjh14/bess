@@ -96,13 +96,13 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
       head.type = HeadAction::DROP;
       StateAction state;
       state.type = StateAction::UNRELATE;
-      state.action = [&](bess::Packet *pkt[[maybe_unused]]) ->bool { return false; };
+      state.action = 
+        [&](bess::Packet *pkt[[maybe_unused]]) ->bool {
+          return false;
+        };
       auto update = 
-        [&](bess::Packet *pkt) {
-          bess::PacketBatch batch;
-          batch.clear();
-          batch.add(pkt);
-          ProcessBatch(&batch);
+        [&](bess::Packet *unit) {
+          ProcessBatch(unit);
         };
       batch->path()->appendRule(head, state, update);
     }

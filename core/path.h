@@ -4,7 +4,8 @@
 #include <functional> 
 #include <vector>
 
-#include "utils/endian.h"
+#include "port.h"
+#include "utils/endian."
 
 namespace bess{
 class Packet;
@@ -62,9 +63,13 @@ class Path {
  public:
   Path();
   void appendRule(HeadAction head, StateAction state, UpdateAction update);
-  void handlePkt(bess::Packet *pkt);
+  void handlePkt(bess::PacketBatch *unit);
+  
+  void set_port(Modlue *module);
   
  private:
+  Modue *port;
+  
   std::vector<HeadAction> heads;
   std::vector<StateAction> states;
   std::vector<UpdateAction> updates;

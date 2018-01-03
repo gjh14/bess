@@ -17,7 +17,8 @@ void Path::appendRule(HeadAction head, StateAction state, UpdateAction update){
   total.merge(head);
 }
 
-void Path::handlePkt(bess::Packet* pkt){
+void Path::handlePkt(bess::PacketBatch *unit){
+  bess:Packet *pkt = unit->pkts()[0];
   for(unsigned i = 0; i < states.size(); ++i){
     if(states[i].action(pkt)){
       UpdateAction next = updates[i];
@@ -28,11 +29,12 @@ void Path::handlePkt(bess::Packet* pkt){
       heads.erase(heads.begin() + i, heads.end());
       states.erase(states.begin() + i, states.end());
       updates.erase(updates.begin() + i, updates.end());
-      next(pkt);
+      next(unit);
       return;
     }
   }
   handleHead(pkt);
+  port->ProcessBatch(unit);
   bess::Packet::Free(pkt);
 }
 
@@ -67,5 +69,9 @@ void Path::handleHead(bess::Packet* pkt){
         }
     // TODO: correct checksum
   }
+}
+
+void Path::set_port(Port* module){
+  port = module;
 }
 
