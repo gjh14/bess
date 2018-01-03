@@ -1,0 +1,6 @@
+Source() -> lb::Maglev(ngates = 3, size = 7)
+sink::Sink()
+lb:0 -> sink
+lb:1 -> sink
+lb:2 -> sink
+
