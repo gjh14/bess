@@ -45,7 +45,9 @@ void Path::handleHead(bess::Packet* pkt){
   Ipv4 *ip = reinterpret_cast<Ipv4 *>(eth + 1);
   size_t ip_bytes = ip->header_length << 2;
   Udp *udp = reinterpret_cast<Udp *>(reinterpret_cast<uint8_t *>(ip) + ip_bytes);
-  if(total.type == HeadAction::MODIFY)
+  if(total.type == HeadAction::MODIFY){
+    uint32_t ip_inc = 0;
+    uint32_t tcp_inc = 0;
     for(unsigned i = 0; i < HeadAction::POSNUM; ++i)
       if(total.pos & (1 << i))
         switch(i){
@@ -63,4 +65,7 @@ void Path::handleHead(bess::Packet* pkt){
           udp->dst_port = bess::utils::be16_t(total.value[i]);
           break;
         }
+    // TODO: correct checksum
+  }
 }
+

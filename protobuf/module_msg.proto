@@ -634,6 +634,23 @@ message MACSwapArg {
 }
 
 /**
+ * Maglev modoule
+ */
+ 
+message MaglevArg {
+  uint32 size = 1;
+  uint32 ngates = 2;
+}
+
+message MaglevCommandArg{
+  message Mod {
+    uint32 gate = 1;
+    bool state = 2;
+  }
+  repeated Mod mods = 1;
+}
+
+/**
  * The measure module tracks latencies, packets per second, and other statistics.
  * It should be paired with a Timestamp module, which attaches a timestamp to packets.
  * The measure module will log how long (in nanoseconds) it has been for each packet it received since it was timsestamped.

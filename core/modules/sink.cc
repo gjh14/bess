@@ -31,6 +31,22 @@
 #include "sink.h"
 
 void Sink::ProcessBatch(bess::PacketBatch *batch) {
+  int cnt = batch->cnt();
+  for(int i = 0; i < cnt; ++i){
+    HeadAction head;
+    head.type = HeadAction::DROP;
+    StateAction state;
+    state.type = StateAction::UNRELATED;
+    state.action = [&](bess::Packet *pkt[[maybe_unused]]) ->bool { return false; };
+    auto update = 
+      [&](bess::Packet *pkt) {
+        bess::PacketBatch batch;
+        batch.clear();
+        batch.add(pkt);
+        ProcessBatch(&batch);
+      };
+    batch->path()->appendRule(head, state, update);
+  }
   bess::Packet::Free(batch);
 }
 

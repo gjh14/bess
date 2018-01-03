@@ -1,9 +1,8 @@
 #ifndef BESS_MAT_H_
 #define BESS_MAT_H_
-
-#include <map>
+s
 #include <string>
-// #include <unordered_map>
+#include <unordered_map>
 
 #include "path.h"
 
@@ -14,8 +13,7 @@ class MAT {
   bool checkMAT(bess::Packet *pkt);
 
  private:
-  // std::unordered_map<std:string, Path *> mat;
-  std::map<std::string, Path *> mat;
+  std::unordered_map<std:string, Path *, std::string::Hash, std::string::EqualTo> mat;
   
   void appendData(std::string *fid, uint32_t num, int len);
   std::string* getFID(bess::Packet *pkt);

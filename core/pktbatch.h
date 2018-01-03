@@ -63,10 +63,22 @@ class PacketBatch {
   }
 
   static const size_t kMaxBurst = 32;
+  
+  // fastpath
+  Path* path() const {
+    return path_;
+  }
+  
+  void set_path(Path* path) { 
+    path_ = path;
+  }
 
  private:
   int cnt_;
   Packet *pkts_[kMaxBurst];
+  
+  // fastpath
+  Path* path_;
 };
 
 static_assert(std::is_pod<PacketBatch>::value, "PacketBatch is not a POD Type");

@@ -95,8 +95,8 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
       HeadAction head;
       head.type = HeadAction::DROP;
       StateAction state;
-      state.type = StateAction::UNRELATED;
-      state.action = [&](bess::Packet *pkt) ->bool { return pkt; };
+      state.type = StateAction::UNRELATE;
+      state.action = [&](bess::Packet *pkt[[maybe_unused]]) ->bool { return false; };
       auto update = 
         [&](bess::Packet *pkt) {
           bess::PacketBatch batch;
@@ -104,7 +104,7 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
           batch.add(pkt);
           ProcessBatch(&batch);
         };
-      pkt->path()->appendRule(head, state, update);
+      batch->path()->appendRule(head, state, update);
     }
   }
   RunSplit(out_gates, batch);

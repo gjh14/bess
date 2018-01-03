@@ -13,7 +13,7 @@ class Packet;
 struct HeadAction {
   static const uint32_t TYPENUM =  2;
   static const uint32_t POSNUM = 5;
-  typedef enum {DROP = 0, MODIFY = 1} TYPE;
+  typedef enum {DROP = 1, MODIFY = 2} TYPE;
   typedef enum {PROTO = 0, SRC_IP, SRC_PORT, DST_IP, DST_PORT} POSITION;
 	
   uint32_t type;
@@ -24,6 +24,14 @@ struct HeadAction {
   	type = pos = 0;
   }
   
+  void modify(uint32_t _pos, uint32_t _value){
+  	if(type & DROP)
+  	  return;
+  	type |= MODIFY;
+  	pos |= 1 << _pos;
+  	value[_pos] = _value;
+  }
+    
   void merge(HeadAction action){
     if(type & DROP)
       return;
@@ -42,7 +50,7 @@ struct HeadAction {
 };
 
 struct StateAction{
-  typedef enum {READ, WRITE, UNRELATED} TYPE;
+  typedef enum {READ, WRITE, UNRELATE} TYPE;
   
   TYPE type;
   std::function<bool(bess::Packet *pkt)> action;

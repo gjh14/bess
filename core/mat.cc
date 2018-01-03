@@ -31,10 +31,10 @@ std::string* MAT::getFID(bess::Packet *pkt) {
   size_t ip_bytes = ip->header_length << 2;
   Udp *udp = reinterpret_cast<Udp *>(reinterpret_cast<uint8_t *>(ip) + ip_bytes);
   appendData(fid, ip->protocol, 1);
-  appendData(fid, ip->src.value(), 4);
-  appendData(fid, ip->dst.value(), 4);
-  appendData(fid, udp->src_port.value(), 2);
-  appendData(fid, udp->dst_port.value(), 2);
+  appendData(fid, ip->src.raw_value(), 4);
+  appendData(fid, ip->dst.raw_value(), 4);
+  appendData(fid, udp->src_port.raw_value(), 2);
+  appendData(fid, udp->dst_port.raw_value(), 2);
   return fid;
 }
 
