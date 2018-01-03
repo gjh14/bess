@@ -15,6 +15,7 @@ const Commands Maglev::cmds = {
 CommandResponse Maglev::Init(const bess::pb::MaglevArg &arg){
   size = arg.size();
   ngates = arg.ngates();
+  LOG(INFO) << size << " " << ngates; 
   for(uint32_t i = 0; i < ngates; ++i){
     is_valid.push_back(true);
     shuffle_list.push_back(std::vector<uint32_t>());
