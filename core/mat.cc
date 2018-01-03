@@ -38,17 +38,15 @@ std::string* MAT::getFID(bess::Packet *pkt) {
   return fid;
 }
 
-bool MAT::checkMAT(bess::Packet *pkt){
+bool MAT::checkMAT(bess::Packet *pkt, Path *&path){
   std::string *fid = getFID(pkt);
   if (mat.count(*fid)) {
-    Path *path = mat[*fid];
+    path = mat[*fid];
     path->handlePkt(pkt);
     delete fid;
     return true;
   }
-  Path *path = new Path();
-  mat[*fid] = path;
-  pkt->set_path(path);
+  mat[*fid] = path = new Path();
   delete fid;
   return false;
 }

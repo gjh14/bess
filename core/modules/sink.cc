@@ -36,7 +36,7 @@ void Sink::ProcessBatch(bess::PacketBatch *batch) {
     HeadAction head;
     head.type = HeadAction::DROP;
     StateAction state;
-    state.type = StateAction::UNRELATED;
+    state.type = StateAction::UNRELATE;
     state.action = [&](bess::Packet *pkt[[maybe_unused]]) ->bool { return false; };
     auto update = 
       [&](bess::Packet *pkt) {

@@ -81,7 +81,7 @@ void Task::collect(bess::PacketBatch *batch, Module *module) {
     if (gmat.checkMAT(pkt, path))
       bess::Packet::Free(pkt);
     else{
-      unhit->set_path(path);
+      unhit.set_path(path);
       unhit.clear();
       unhit.add(pkt);
       module->RunNextModule(&unhit);

@@ -40,14 +40,14 @@ void Path::handleHead(bess::Packet* pkt){
   using bess::utils::Ethernet;
   using bess::utils::Ipv4;
   using bess::utils::Udp;
+  using bess::utils::be32_t;
+  using bess::utils::be16_t;
 
   Ethernet *eth = pkt->head_data<Ethernet *>();
   Ipv4 *ip = reinterpret_cast<Ipv4 *>(eth + 1);
   size_t ip_bytes = ip->header_length << 2;
   Udp *udp = reinterpret_cast<Udp *>(reinterpret_cast<uint8_t *>(ip) + ip_bytes);
   if(total.type == HeadAction::MODIFY){
-    uint32_t ip_inc = 0;
-    uint32_t tcp_inc = 0;
     for(unsigned i = 0; i < HeadAction::POSNUM; ++i)
       if(total.pos & (1 << i))
         switch(i){
@@ -55,14 +55,14 @@ void Path::handleHead(bess::Packet* pkt){
           ip->protocol = total.value[i];
           break;
           case HeadAction::SRC_IP:
-          ip->src = bess::utils::be32_t(total.value[i]);
+          ip->src = be32_t(total.value[i]);
           break;
           case HeadAction::SRC_PORT:
-          udp->src_port = bess::utils::be16_t(total.value[i]);
+          udp->src_port = be16_t(total.value[i]);
           case HeadAction::DST_IP:
-          ip->dst = bess::utils::be32_t(total.value[i]);
+          ip->dst = be32_t(total.value[i]);
           case HeadAction::DST_PORT:
-          udp->dst_port = bess::utils::be16_t(total.value[i]);
+          udp->dst_port = be16_t(total.value[i]);
           break;
         }
     // TODO: correct checksum

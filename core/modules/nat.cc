@@ -279,10 +279,10 @@ inline void Stamp(Ipv4 *ip, void *l4, const Endpoint &before,
 
   if (dir == NAT::kForward) {
     ip->src = after.addr;
-    head.modify(HeadAction::SRC_IP, after.addr);
+    head.modify(HeadAction::SRC_IP, after.addr.raw_value());
   } else {
     ip->dst = after.addr;
-    head.modify(HeadAction::DST_IP, after.addr);
+    head.modify(HeadAction::DST_IP, after.addr.raw_value());
   }
 
   uint32_t l3_increment =
@@ -297,10 +297,10 @@ inline void Stamp(Ipv4 *ip, void *l4, const Endpoint &before,
     Udp *udp = static_cast<Udp *>(l4);
     if (dir == NAT::kForward) {
       udp->src_port = after.port;
-      head.modify(HeadAction::SRC_PORT, after.port);
+      head.modify(HeadAction::SRC_PORT, after.port.raw_value());
     } else {
       udp->dst_port = after.port;
-      head.modify(HeadAction::DST_PORT, after.port);
+      head.modify(HeadAction::DST_PORT, after.port.raw_value());
     }
 
     if (proto == IpProto::kTcp) {

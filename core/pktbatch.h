@@ -31,6 +31,7 @@
 #ifndef BESS_PKTBATCH_H_
 #define BESS_PKTBATCH_H_
 
+#include "path.h"
 #include "utils/copy.h"
 
 namespace bess {

@@ -2,13 +2,17 @@
 
 #include <algorithm>
 
+#include "../utils/ether.h"
+#include "../utils/ip.h"
+#include "../utils/udp.h"
+
 const Commands Maglev::cmds = {
     {"modify", "MaglevCommandArg", MODULE_CMD_FUNC(&Maglev::CommandModify),
      Command::Command::THREAD_UNSAFE},
     {"clear", "EmptyArg", MODULE_CMD_FUNC(&Maglev::CommandClear),
      Command::Command::THREAD_UNSAFE}};
      
-CommandResponse MaglevInit(const bess::pb::MaglevArg &arg){
+CommandResponse Maglev::Init(const bess::pb::MaglevArg &arg){
   size = arg.size();
   ngates = arg.ngates();
   for(uint32_t i = 0; i < ngates; ++i){
@@ -16,21 +20,22 @@ CommandResponse MaglevInit(const bess::pb::MaglevArg &arg){
     shuffle_list.push_back(std::vector<uint32_t>());
     for(uint32_t j = 0; j < size; ++j)
       shuffle_list[i].push_back(j);
-    std::random_shuffle(shuffle_list[i].begin(), shuffle_list[j].end());
+    std::random_shuffle(shuffle_list[i].begin(), shuffle_list[i].end());
   }
   for(uint32_t i = 0; i < size; ++i)
     hash_table.push_back(DROP_GATE);
   build();
+  return CommandSuccess();
 }
 
-void Maglev::modify(const bess::pb::MaglevCommandArg &arg){
+CommandResponse Maglev::CommandModify(const bess::pb::MaglevCommandArg &arg){
   for(const auto &mod : arg.mods())
     is_valid[mod.gate()] = mod.state();
   build();
   return CommandSuccess();
 }
 
-void Maglev::clear(const bess::pb::EmptyArg &){
+CommandResponse Maglev::CommandClear(const bess::pb::EmptyArg &){
   for(uint32_t i = 0; i < ngates; ++i)
     is_valid[i] = false;
   build();
@@ -70,7 +75,6 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
   using bess::utils::Udp;
 
   gate_idx_t out_gates[bess::PacketBatch::kMaxBurst];
-  gate_idx_t incoming_gate = get_igate();
 
   int cnt = batch->cnt();
   for (int i = 0; i < cnt; i++) {
@@ -82,7 +86,7 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
     Udp *udp = reinterpret_cast<Udp *>(reinterpret_cast<uint8_t *>(ip) + ip_bytes);
 
     uint32_t value = hash(ip->protocol, ip->src, udp->src_port, ip->dst, udp->dst_port);
-    uint32_t gate = hash_table[value]
+    uint32_t gate = hash_table[value];
     out_gates[i] = gate;
       
     HeadAction head;
