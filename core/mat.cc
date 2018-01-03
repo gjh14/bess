@@ -37,7 +37,7 @@ void MAT::getFID(bess::Packet *pkt, std::string &fid) {
 }
 
 bool MAT::checkMAT(bess::PacketBatch *unit){
-  bess:PacketBatch = unit->pkts[0];
+  bess::Packet *pkt = unit->pkts()[0];
   std::string fid;
   getFID(pkt, fid);
   if (mat.count(fid)) {

@@ -4,12 +4,14 @@
 #include <functional> 
 #include <vector>
 
-#include "port.h"
-#include "utils/endian."
+#include "utils/endian.h"
 
 namespace bess{
 class Packet;
+class PacketBatch;
 }
+
+class Module;
 
 struct HeadAction {
   static const uint32_t TYPENUM =  2;
@@ -57,7 +59,7 @@ struct StateAction{
   std::function<bool(bess::Packet *pkt)> action;
 };
 
-typedef std::function<void(bess::Packet *pkt)> UpdateAction;
+typedef std::function<void(bess::PacketBatch *unit)> UpdateAction;
 
 class Path {
  public:
@@ -65,10 +67,10 @@ class Path {
   void appendRule(HeadAction head, StateAction state, UpdateAction update);
   void handlePkt(bess::PacketBatch *unit);
   
-  void set_port(Modlue *module);
+  void set_port(Module *module);
   
  private:
-  Modue *port;
+  Module *port;
   
   std::vector<HeadAction> heads;
   std::vector<StateAction> states;

@@ -341,13 +341,13 @@ inline void NAT::DoProcessBatch(bess::PacketBatch *batch) {
     HeadAction head;
     StateAction state;
     state.type = StateAction::UNRELATE;
-    state.action = [&](bess::Packet *pkt[[maybe_unused]]) ->bool { return false; };
+    state.action = 
+      [&](bess::Packet *pkt[[maybe_unused]]) -> bool {
+        return false;
+      };
     auto update = 
-      [&](bess::Packet *pkt) {
-        bess::PacketBatch batch;
-         batch.clear();
-        batch.add(pkt);
-        ProcessBatch(&batch);
+      [&](bess::PacketBatch *unit) {
+        ProcessBatch(unit);
       };
 
     Ethernet *eth = pkt->head_data<Ethernet *>();

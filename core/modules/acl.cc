@@ -101,7 +101,7 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
           return false;
         };
       auto update = 
-        [&](bess::Packet *unit) {
+        [&](bess::PacketBatch *unit) {
           ProcessBatch(unit);
         };
       batch->path()->appendRule(head, state, update);

@@ -1,4 +1,6 @@
 #include "path.h"
+
+#include "module.h"
 #include "packet.h"
 #include "utils/ether.h"
 #include "utils/ip.h"
@@ -18,7 +20,7 @@ void Path::appendRule(HeadAction head, StateAction state, UpdateAction update){
 }
 
 void Path::handlePkt(bess::PacketBatch *unit){
-  bess:Packet *pkt = unit->pkts()[0];
+  bess::Packet *pkt = unit->pkts()[0];
   for(unsigned i = 0; i < states.size(); ++i){
     if(states[i].action(pkt)){
       UpdateAction next = updates[i];
@@ -38,7 +40,7 @@ void Path::handlePkt(bess::PacketBatch *unit){
   bess::Packet::Free(pkt);
 }
 
-void Path::handleHead(bess::Packet* pkt){
+void Path::handleHead(bess::Packet *pkt){
   using bess::utils::Ethernet;
   using bess::utils::Ipv4;
   using bess::utils::Udp;
@@ -71,7 +73,7 @@ void Path::handleHead(bess::Packet* pkt){
   }
 }
 
-void Path::set_port(Port* module){
+void Path::set_port(Module* module){
   port = module;
 }
 

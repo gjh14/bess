@@ -99,7 +99,7 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
         return hash_table[value] != gate;
       };
     auto update = 
-      [&](bess::Packet *unit) {
+      [&](bess::PacketBatch *unit) {
         ProcessBatch(unit);
       };
     batch->path()->appendRule(head, state, update);
