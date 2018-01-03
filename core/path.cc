@@ -7,9 +7,7 @@
 #include "utils/udp.h"
 
 Path::Path(){
-  heads.clear();
-  states.clear();
-  updates.clear();
+  port = nullptr;
 }
 
 void Path::appendRule(HeadAction head, StateAction state, UpdateAction update){
@@ -36,7 +34,8 @@ void Path::handlePkt(bess::PacketBatch *unit){
     }
   }
   handleHead(pkt);
-  port->ProcessBatch(unit);
+  if(port != nullptr)
+    port->ProcessBatch(unit);
   bess::Packet::Free(pkt);
 }
 

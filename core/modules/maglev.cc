@@ -15,7 +15,7 @@ const Commands Maglev::cmds = {
 CommandResponse Maglev::Init(const bess::pb::MaglevArg &arg){
   size = arg.size();
   ngates = arg.ngates();
-  LOG(INFO) << size << " " << ngates; 
+  LOG(INFO) << "INIT " << size << " " << ngates; 
   for(uint32_t i = 0; i < ngates; ++i){
     is_valid.push_back(true);
     shuffle_list.push_back(std::vector<uint32_t>());
@@ -54,8 +54,9 @@ void Maglev::build(){
       point.push_back(0);
     }
   for(uint32_t linked = 0; linked < size;){
-    for(unsigned i = 0; i < gates.size(); ++i){
+    for(unsigned i = 0; i < gates.size() && linked < size; ++i){
       for(; hash_table[shuffle_list[gates[i]][point[i]]] < ngates; ++point[i]);
+      ++linked;
       hash_table[shuffle_list[gates[i]][point[i]]] = gates[i];
     }
   }

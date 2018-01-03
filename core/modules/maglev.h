@@ -8,7 +8,9 @@
 #include "../utils/endian.h"
 
 class Maglev final: public Module{
- public:  
+ public:
+  static const gate_idx_t kNumOGates = MAX_GATES;
+
   static const Commands cmds;
   Maglev() : Module() { max_allowed_workers_ = Worker::kMaxWorkers; }
   
