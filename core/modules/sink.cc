@@ -32,21 +32,8 @@
 
 void Sink::ProcessBatch(bess::PacketBatch *batch) {
   int cnt = batch->cnt();
-  for(int i = 0; i < cnt; ++i){
-    HeadAction head;
-    head.type = HeadAction::DROP;
-    StateAction state;
-    state.type = StateAction::UNRELATE;
-    state.action = 
-      [&](bess::Packet *pkt[[maybe_unused]]) -> bool {
-        return false;
-      };
-    auto update = 
-      [&](bess::PacketBatch *unit) {
-        ProcessBatch(unit);
-      };
-    batch->path()->appendRule(head, state, update);
-  }
+  for(int i = 0; i < cnt; ++i)
+    batch->path()->set_port(this);
   bess::Packet::Free(batch);
 }
 
