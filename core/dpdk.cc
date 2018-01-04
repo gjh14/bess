@@ -152,6 +152,7 @@ static void init_eal(const char *prog_name, int mb_per_socket,
   if (!no_huge && multi_instance) {
     rte_args.Append({"--file-prefix", "rte" + std::to_string(getpid())});
   }
+  LOG(INFO) << "Judege Finish";
 
   /* reset getopt() */
   optind = 0;
@@ -171,11 +172,13 @@ static void init_eal(const char *prog_name, int mb_per_socket,
   stdout = fopencookie(nullptr, "w", dpdk_log_init_funcs);
 
   disable_syslog();
+  LOG(INFO) << "rte_eal_init Start";
   int ret = rte_eal_init(rte_args.Argc(), rte_args.Argv());
   if (ret < 0) {
     LOG(ERROR) << "rte_eal_init() failed: ret = " << ret;
     exit(EXIT_FAILURE);
   }
+  LOG(INFO) << "rte_eal_init Finish";
 
   enable_syslog();
   fclose(stdout);
@@ -218,6 +221,7 @@ void init_dpdk(const ::std::string &prog_name, int mb_per_socket,
   int default_core = determine_default_core();
   ctx.SetNonWorker();
 
+  LOG(INFO) << "SetNonWorker OK";
   init_eal(prog_name.c_str(), mb_per_socket, multi_instance, no_huge,
            default_core);
 }
