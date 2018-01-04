@@ -1,0 +1,10 @@
+input::PCAPPort(dev = "testing/input.pcap")
+out1::PCAPort(dev = "testing/out1.pcap");
+out2::PCAPort(dev = "testing/out2.pcap");
+out3::PCAPort(dev = "testing/out3.pcap");
+
+PortInc(port = input) -> lb1::Maglev(size = 7, ngates = 3)
+lb1:0 -> PortOut(port = out1)
+lb1:1 -> PortOut(port = out2)
+lb1:2 -> PortOut(port = out3)
+

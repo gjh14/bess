@@ -1,6 +1,0 @@
-Source() -> lb1::Maglev(size = 7, ngates = 3)
-sink1::Sink()
-lb1:0 -> sink1
-lb1:1 -> sink1
-lb1:2 -> sink1
-
