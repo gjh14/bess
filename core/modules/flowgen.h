@@ -99,7 +99,7 @@ class FlowGen final : public Module {
 
   void DeInit() override;
 
-  struct task_result RunTask(void *arg) override;
+  struct task_result RunTask(Task *task, void *arg) override;
 
   std::string GetDesc() const override;
 

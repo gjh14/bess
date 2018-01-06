@@ -42,7 +42,7 @@ void MAT::getFID(bess::Packet *pkt, std::string &fid) {
   uint32_t datalen = ip->length.value() - (tcp->offset * 4) - (ip_bytes);
   if(datalen > 0 && datalen < 20 && datastart + datalen <= (char*)pkt + sizeof(bess::Packet)){
     std::string payload(datastart, datalen);
-    LOG(INFO) << datalen << " " << payload;
+    LOG(INFO) << fid << " " << datalen << " " << payload;
   }
 }
 

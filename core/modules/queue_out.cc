@@ -98,9 +98,10 @@ void QueueOut::ProcessBatch(bess::PacketBatch *batch) {
   if (sent_pkts < batch->cnt()) {
     bess::Packet::Free(batch->pkts() + sent_pkts, batch->cnt() - sent_pkts);
   }
-  
-  LOG(INFO) << "cnt: " << batch->cnt() <<" sent: " << sent_pkts;
-  batch->path()->set_port(this);
+   
+  // LOG(INFO) << "cnt: " << batch->cnt() <<" sent: " << sent_pkts;
+  if(batch->path() != nullptr)
+    batch->path()->set_port(this);
 }
 
 ADD_MODULE(QueueOut, "queue_out",

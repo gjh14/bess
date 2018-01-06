@@ -121,10 +121,17 @@ class CmdLineOpts {
   std::vector<char *> argv_;
 };
 
-static void init_eal(const char *prog_name, int mb_per_socket,
-                     int multi_instance, bool no_huge, int default_core) {
-  int numa_count = get_numa_count();
+static void init_eal(const char *prog_name[[maybe_unused]], int mb_per_socket[[maybe_unused]],
+                     int multi_instance[[maybe_unused]], bool no_huge[[maybe_unused]], int default_core[[maybe_unused]]) {
 
+  CmdLineOpts rte_args{
+      "-c", "0x1", "-l", "2", "-n", "1", "--proc-type", "auto",
+	  "--log-level", "7", "--socket-mem", "512", "--file-prefix", "pg2",
+      "-b", "02:00.0", "-b", "03:00.0"
+  };  
+
+  int numa_count[[maybe_unused]] = get_numa_count();
+ /*
   CmdLineOpts rte_args{
       prog_name, "--master-lcore", std::to_string(RTE_MAX_LCORE - 1), "--lcore",
       std::to_string(RTE_MAX_LCORE - 1) + "@" + std::to_string(default_core),
@@ -153,8 +160,7 @@ static void init_eal(const char *prog_name, int mb_per_socket,
   if (!no_huge && multi_instance) {
     rte_args.Append({"--file-prefix", "rte" + std::to_string(getpid())});
   }
-  LOG(INFO) << "Judege Finish";
-
+*/
   /* reset getopt() */
   optind = 0;
 

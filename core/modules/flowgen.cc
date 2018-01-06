@@ -509,7 +509,7 @@ void FlowGen::GeneratePackets(bess::PacketBatch *batch) {
   }
 }
 
-struct task_result FlowGen::RunTask(void *) {
+struct task_result FlowGen::RunTask(Task *task, void *) {
   if (children_overload_ > 0) {
     return {
       .block = true,
@@ -522,7 +522,8 @@ struct task_result FlowGen::RunTask(void *) {
   bess::PacketBatch batch;
 
   GeneratePackets(&batch);
-  RunNextModule(&batch);
+  task->collect(&batch, this);
+  // RunNextModule(&batch);
 
   uint32_t cnt = batch.cnt();
   return {.block = (cnt == 0),

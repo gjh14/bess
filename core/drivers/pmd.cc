@@ -243,6 +243,7 @@ CommandResponse PMDPort::Init(const bess::pb::PMDPortArg &arg) {
   /* Use defaut rx/tx configuration as provided by PMD drivers,
    * with minor tweaks */
   rte_eth_dev_info_get(ret_port_id, &dev_info);
+  LOG(INFO) <<"RTE_INIT " << ret_port_id << " " << dev_info.driver_name; 
 
   if (dev_info.driver_name) {
     driver_ = dev_info.driver_name;
@@ -265,6 +266,7 @@ CommandResponse PMDPort::Init(const bess::pb::PMDPortArg &arg) {
     return CommandFailure(-ret, "rte_eth_dev_configure() failed");
   }
   rte_eth_promiscuous_enable(ret_port_id);
+  // rte_eth_promiscuous_disable(ret_port_id);
 
   // NOTE: As of DPDK 17.02, TX queues should be initialized first.
   // Otherwise the DPDK virtio PMD will crash in rte_eth_rx_burst() later.
@@ -280,6 +282,7 @@ CommandResponse PMDPort::Init(const bess::pb::PMDPortArg &arg) {
 
   for (i = 0; i < num_rxq; i++) {
     int sid = rte_eth_dev_socket_id(ret_port_id);
+    LOG(INFO) << "RX_SID " << sid;
 
     /* if socket_id is invalid, set to 0 */
     if (sid < 0 || sid > RTE_MAX_NUMA_NODES) {

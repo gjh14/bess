@@ -119,7 +119,8 @@ void PortOut::ProcessBatch(bess::PacketBatch *batch) {
     bess::Packet::Free(batch->pkts() + sent_pkts, batch->cnt() - sent_pkts);
   }
   
-  batch->path()->set_port(this);
+  if(batch->path() != nullptr)
+    batch->path()->set_port(this);
 }
 
 int PortOut::OnEvent(bess::Event e) {

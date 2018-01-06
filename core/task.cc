@@ -85,4 +85,3 @@ void Task::collect(bess::PacketBatch *batch, Module *module) {
       module->RunNextModule(&unit);
   }
 }
-

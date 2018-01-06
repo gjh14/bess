@@ -98,6 +98,8 @@ struct task_result QueueInc::RunTask(Task *task, void *arg) {
 
   batch.set_cnt(p->RecvPackets(qid, batch.pkts(), burst));
   uint32_t cnt = batch.cnt();
+  if(cnt > 0)
+    LOG(INFO) << "RECV " << cnt;
 
   if (cnt == 0) {
     return {.block = true, .packets = 0, .bits = 0};

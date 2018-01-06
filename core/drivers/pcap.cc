@@ -41,16 +41,21 @@ CommandResponse PCAPPort::Init(const bess::pb::PCAPPortArg& arg) {
   }
 
   const std::string dev = arg.dev();
-  pcap_handle_ = PcapHandle(dev);
+  // pcap_handle_ = PcapHandle(dev);
+
+  char errbuf[PCAP_ERRBUF_SIZE];
+  pcap_t *handle_  = pcap_open_offline(dev.c_str(), errbuf);
+  LOG(INFO) << "PCAP_OPEN " << dev << " " << errbuf;
+  pcap_handle_ = PcapHandle(handle_);
 
   if (!pcap_handle_.is_initialized()) {
     return CommandFailure(EINVAL, "Error initializing device.");
   }
-
+/*  
   if (pcap_handle_.SetBlocking(false)) {
     return CommandFailure(EINVAL, "Error initializing device.");
   }
-
+*/
   return CommandSuccess();
 }
 

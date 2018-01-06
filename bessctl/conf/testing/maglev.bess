@@ -1,0 +1,5 @@
+port::PMDPort(port_id = 0, num_inc_q = 1, num_out_q = 1)
+source1::Source()
+source1.set_burst(burst = 1)
+maglev::Maglev(size = 7, dsts=[{'dst_ip': '1.2.3.4', 'dst_port': 5}, {'dst_ip': '1.2.3.4', 'dst_port': 6},  {'dst_ip': '1.2.3.4', 'dst_port': 7}])
+source1 -> maglev -> QueueOut(port = port, qid = 0)
