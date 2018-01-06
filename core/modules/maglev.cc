@@ -19,11 +19,11 @@ CommandResponse Maglev::Init(const bess::pb::MaglevArg &arg){
     if(ParseIpv4Address(dst.dst_ip(), &addr)){
       MaglevDst new_dst = {
         .dst_ip = addr.raw_value(),
-        .dst_port = (uint16_t)dst.dst_port())};
+        .dst_port = (uint16_t)dst.dst_port()};
       dsts.push_back(new_dst);
     }
   }
-  ndsts = dsts().size();
+  ndsts = dsts.size();
   
   for(uint32_t i = 0; i < ndsts; ++i){
     is_valid.push_back(true);
@@ -108,7 +108,7 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
     }else{
       out_gates[i] = 0;
       head.modify(HeadAction::DST_IP, dsts[gate].dst_ip);
-      head.modify(HeadAction::DST_port, dsts[gate].dst_port);
+      head.modify(HeadAction::DST_PORT, dsts[gate].dst_port);
     }
     
     StateAction state;
