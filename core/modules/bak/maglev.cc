@@ -14,18 +14,9 @@ const Commands Maglev::cmds = {
      
 CommandResponse Maglev::Init(const bess::pb::MaglevArg &arg){
   size = arg.size();
-  for (const auto &dst : arg.dsts()) {
-    be32_t addr(0);
-    if(ParseIpv4Address(dst.dst_ip(), &addr)){
-      MaglevDst new_dst = {
-        .dst_ip = addr.raw_value(),
-        .dst_port = (uint16_t)dst.dst_port())};
-      dsts.push_back(new_dst);
-    }
-  }
-  ndsts = dsts().size();
-  
-  for(uint32_t i = 0; i < ndsts; ++i){
+  ngates = arg.ngates();
+  LOG(INFO) << "INIT " << size << " " << ngates; 
+  for(uint32_t i = 0; i < ngates; ++i){
     is_valid.push_back(true);
     shuffle_list.push_back(std::vector<uint32_t>());
     for(uint32_t j = 0; j < size; ++j)
@@ -33,9 +24,8 @@ CommandResponse Maglev::Init(const bess::pb::MaglevArg &arg){
     std::random_shuffle(shuffle_list[i].begin(), shuffle_list[i].end());
   }
   for(uint32_t i = 0; i < size; ++i)
-    hash_table.push_back(ndsts);
+    hash_table.push_back(DROP_GATE);
   build();
-  
   return CommandSuccess();
 }
 
@@ -47,7 +37,7 @@ CommandResponse Maglev::CommandModify(const bess::pb::MaglevCommandArg &arg){
 }
 
 CommandResponse Maglev::CommandClear(const bess::pb::EmptyArg &){
-  for(uint32_t i = 0; i < ndsts; ++i)
+  for(uint32_t i = 0; i < ngates; ++i)
     is_valid[i] = false;
   build();
   return CommandSuccess();
@@ -55,18 +45,17 @@ CommandResponse Maglev::CommandClear(const bess::pb::EmptyArg &){
 
 void Maglev::build(){
   for(uint32_t i = 0; i < size; ++i)
-    hash_table[i] = ndsts;
+    hash_table[i] = DROP_GATE;
   std::vector<uint32_t> gates;
   std::vector<uint32_t> point;
-  for(uint32_t i = 0; i < ndsts; ++i)
+  for(uint32_t i = 0; i < ngates; ++i)
     if(is_valid[i]){
       gates.push_back(i);
       point.push_back(0);
     }
-    
   for(uint32_t linked = 0; linked < size;){
     for(unsigned i = 0; i < gates.size() && linked < size; ++i){
-      for(; hash_table[shuffle_list[gates[i]][point[i]]] < ndsts; ++point[i]);
+      for(; hash_table[shuffle_list[gates[i]][point[i]]] < ngates; ++point[i]);
       ++linked;
       hash_table[shuffle_list[gates[i]][point[i]]] = gates[i];
     }
@@ -100,17 +89,11 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
 
     uint32_t value = hash(ip->protocol, ip->src, udp->src_port, ip->dst, udp->dst_port);
     uint32_t gate = hash_table[value];
+    out_gates[i] = gate;
       
     HeadAction head;
-    if(gate == ndsts){
-      out_gates[i] = DROP_GATE;
+    if(gate == DROP_GATE)
       head.type = HeadAction::DROP;
-    }else{
-      out_gates[i] = 0;
-      head.modify(HeadAction::DST_IP, dsts[gate].dst_ip);
-      head.modify(HeadAction::DST_port, dsts[gate].dst_port);
-    }
-    
     StateAction state;
     state.type = StateAction::UNRELATE;
     state.action = 
@@ -123,7 +106,6 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
       };
     batch->path()->appendRule(head, state, update);
   }
-  
   RunSplit(out_gates, batch);
 }
 

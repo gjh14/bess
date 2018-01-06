@@ -636,10 +636,13 @@ message MACSwapArg {
 /**
  * Maglev modoule
  */
- 
 message MaglevArg {
+  message Dst {
+    string dst_ip = 1;
+    uint32 dst_port = 2;
+  }
   uint32 size = 1;
-  uint32 ngates = 2;
+  repeated Dst dsts = 2;
 }
 
 message MaglevCommandArg{

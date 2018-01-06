@@ -9,11 +9,8 @@
 
 class Maglev final: public Module{
  public:
-   struct MaglevDst {
-    uint32_t dst_ip;
-    uint16_t dst_port;
-  };
-  
+  static const gate_idx_t kNumOGates = MAX_GATES;
+
   static const Commands cmds;
   Maglev() : Module() { max_allowed_workers_ = Worker::kMaxWorkers; }
   
@@ -29,8 +26,7 @@ class Maglev final: public Module{
   using be16_t = bess::utils::be16_t;
 
   uint32_t size;
-  uint32_t ndsts;
-  std::vector<MaglevDst> dsts;
+  uint32_t ngates; 
  
   std::vector<bool> is_valid;
   std::vector<std::vector<uint32_t>> shuffle_list;
@@ -39,6 +35,5 @@ class Maglev final: public Module{
   uint32_t hash(uint8_t protocol, be32_t src_ip, be16_t src_port, be32_t dst_ip, be16_t dst_port);
   void build();
 };
-
 #endif
 
