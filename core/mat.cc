@@ -3,6 +3,7 @@
 
 #include "utils/ether.h"
 #include "utils/ip.h"
+#include "utils/tcp.h"
 #include "utils/udp.h"
 
 MAT::MAT(){
@@ -34,6 +35,15 @@ void MAT::getFID(bess::Packet *pkt, std::string &fid) {
   appendData(fid, ip->dst.raw_value(), 4);
   appendData(fid, udp->src_port.raw_value(), 2);
   appendData(fid, udp->dst_port.raw_value(), 2);
+  
+  using bess::utils::Tcp;
+  Tcp* tcp = reinterpret_cast<Tcp *>(reinterpret_cast<uint8_t *>(ip) + ip_bytes);
+  const char *datastart = ((const char *)tcp) + (tcp->offset * 4);
+  uint32_t datalen = ip->length.value() - (tcp->offset * 4) - (ip_bytes);
+  if(datalen > 0 && datalen < 20 && datastart + datalen <= (char*)pkt + sizeof(bess::Packet)){
+    std::string payload(datastart, datalen);
+    LOG(INFO) << datalen << " " << payload;
+  }
 }
 
 bool MAT::checkMAT(bess::PacketBatch *unit){

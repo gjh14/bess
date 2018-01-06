@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2017, The Regents of the University of California.
+// Copyright (c) 2014-2016, The Regents of the University of California.
 // Copyright (c) 2016-2017, Nefeli Networks, Inc.
 // All rights reserved.
 //
@@ -28,61 +28,30 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "task.h"
+#ifndef BESS_MODULES_QUEUEOUT_H_
+#define BESS_MODULES_QUEUEOUT_H_
 
-#include <unordered_set>
+#include "../module.h"
+#include "../pb/module_msg.pb.h"
+#include "../port.h"
 
-#include "module.h"
+class QueueOut final : public Module {
+ public:
+  static const gate_idx_t kNumOGates = 0;
 
-// Called when the leaf that owns this task is destroyed.
-void Task::Detach() {
-  c_ = nullptr;
-}
+  QueueOut() : Module(), port_(), qid_() {}
 
-// Called when the leaf that owns this task is created.
-void Task::Attach(bess::LeafTrafficClass *c) {
-  c_ = c;
-}
+  CommandResponse Init(const bess::pb::QueueOutArg &arg);
 
-struct task_result Task::operator()(void) {
-  return module_->RunTask(this, arg_);
-}
+  void DeInit() override;
 
-/*!
- * Compute constraints for the pipeline starting at this task.
- */
-placement_constraint Task::GetSocketConstraints() const {
-  if (module_) {
-    std::unordered_set<const Module *> visited;
-    return module_->ComputePlacementConstraints(&visited);
-  } else {
-    return UNCONSTRAINED_SOCKET;
-  }
-}
+  void ProcessBatch(bess::PacketBatch *batch) override;
 
-/*!
- * Add a worker to the set of workers that call this task.
- */
-void Task::AddActiveWorker(int wid) const {
-  if (module_) {
-    module_->AddActiveWorker(wid, c_->task());
-  }
-}
+  std::string GetDesc() const override;
 
-/*!
- * GMAT
- */
-void Task::collect(bess::PacketBatch *batch, Module *module) {
-  bess::PacketBatch unit;
-  int cnt = batch->cnt();
-  // LOG(INFO) << "RECV " << cnt;
-  for (int i = 0; i < cnt; ++i) {
-    unit.clear();
-  	unit.add(batch->pkts()[i]);
-    if (gmat.checkMAT(&unit))
-      bess::Packet::Free(&unit);
-    else
-      module->RunNextModule(&unit);
-  }
-}
+ private:
+  Port *port_;
+  queue_t qid_;
+};
 
+#endif  // BESS_MODULES_QUEUEOUT_H_

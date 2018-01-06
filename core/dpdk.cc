@@ -131,6 +131,7 @@ static void init_eal(const char *prog_name, int mb_per_socket,
       // Do not bother with /var/run/.rte_config and .rte_hugepage_info,
       // since we don't want to interfere with other DPDK applications.
       "--no-shconf",
+      "-b", "02:00.0", "-b", "03:00.0", "-b", "05:00.0",
   };
 
   if (no_huge) {
@@ -172,6 +173,9 @@ static void init_eal(const char *prog_name, int mb_per_socket,
   stdout = fopencookie(nullptr, "w", dpdk_log_init_funcs);
 
   disable_syslog();
+  LOG(INFO) << "List argc = " << rte_args.Argc();
+  for(int i = 0; i < rte_args.Argc(); ++i)
+    LOG(INFO) << rte_args.Argv()[i];
   LOG(INFO) << "rte_eal_init Start";
   int ret = rte_eal_init(rte_args.Argc(), rte_args.Argv());
   if (ret < 0) {

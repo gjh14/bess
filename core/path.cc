@@ -36,7 +36,8 @@ void Path::handlePkt(bess::PacketBatch *unit){
   handleHead(pkt);
   if(port != nullptr)
     port->ProcessBatch(unit);
-  bess::Packet::Free(pkt);
+  else
+    bess::Packet::Free(pkt);
 }
 
 void Path::handleHead(bess::Packet *pkt){

@@ -1,4 +1,4 @@
-in1::PMDPort(port_id = 10000, qum_inc_q = 2, num_out_q = 2)
-out1::PMDPort(port_id = 10001, qum_inc_q = 2, num_out_q = 2)
-PortInc(port = in1) -> PortOut(port = out1)
+port::PMDPort(port_id = 0, num_inc_q = 1, num_out_q = 1)
+# PortInc(port = port) -> PortOut(port = port)
+QueueInc(port = port, qid = 0) -> QueueOut(port = port, qid = 0)
 
