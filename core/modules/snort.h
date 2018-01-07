@@ -127,7 +127,7 @@ class Snort final : public Module {
   int mSearch( char *buf, int blen, char *ptrn, int plen);
 
   void clear();
-  void snort_pktcon(struct bess::Packet *pkt, NetData& net);
+  bool snort_pktcon(struct bess::Packet *pkt, NetData& net);
 };
 
 #endif

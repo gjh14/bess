@@ -1439,7 +1439,7 @@ bottom:
    return 0;
 }
 
-void Snort::snort_pktcon(struct bess::Packet *pkt, NetData &net){
+bool Snort::snort_pktcon(struct bess::Packet *pkt, NetData &net){
   using bess::utils::Ethernet;
   using bess::utils::Ipv4;
   Ethernet *eth = pkt->head_data<Ethernet *>();
@@ -1492,6 +1492,7 @@ void Snort::snort_pktcon(struct bess::Packet *pkt, NetData &net){
   // printf("net.proto:%d\n",net.proto);
   // printf("net.tcp_flags:%d\n",net.tcp_flags);
   // printf("pip.ttl:%d\n",pip.ttl);
+  return true;
 }
 
 const Commands Snort::cmds = {
@@ -1567,7 +1568,9 @@ void Snort::ProcessBatch(bess::PacketBatch *batch){
     StateAction state;
     state.type = StateAction::READ;
     state.action = 
-      [=](bess::Packet *pkt[[maybe_unused]]) ->bool {
+      [&](bess::Packet *pkt[[maybe_unused]]) ->bool {
+        NetData net;
+        snort_pktcon(pkt, net);
         if(CheckRules(AlertList, net, pip)){
         
         }
@@ -1588,3 +1591,5 @@ void Snort::ProcessBatch(bess::PacketBatch *batch){
   }
 }
 
+ADD_MODULE(Snort, "snort",
+           "standard IDS")

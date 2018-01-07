@@ -1,0 +1,3 @@
+snort::Snort(file = "RULES.SAMPLE")
+Source() -> snort -> Sink()
+
