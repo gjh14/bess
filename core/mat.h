@@ -16,11 +16,11 @@ class MAT {
 
  private:
  
-  Path[MAX_PATHS] paths;
+  Path paths[MAX_PATHS];
   // std::unordered_map<std::string, Path *, std::hash<std::string>, std::equal_to<std::string>> mat;
   
-  void appendData(std::string &fid, uint32_t num, int len);
-  void getFID(bess::Packet *pkt, std::string &fid, uint64_t hash);
+  void appendData(std::string &fid, uint64_t &hash, uint32_t num, int len);
+  void getFID(bess::Packet *pkt, std::string &fid, uint64_t &hash);
 };
 
 #endif

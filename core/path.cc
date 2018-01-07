@@ -11,7 +11,12 @@ Path::Path(){
   port_ = nullptr;
 }
 
+Path::~Path(){
+  delete fid_;
+}
+
 void Path::set_fid(std::string *fid){
+  delete fid_;
   fid_ = fid;
   total.type = total.pos = 0;
   heads.clear();
@@ -19,8 +24,8 @@ void Path::set_fid(std::string *fid){
   updates.clear();
 }
 
-const std::string& fid(){
-  return *fid_;
+const std::string *Path::fid(){
+  return fid_;
 }
 
 void Path::set_port(Module* port){

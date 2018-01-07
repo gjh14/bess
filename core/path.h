@@ -64,15 +64,17 @@ typedef std::function<void(bess::PacketBatch *unit)> UpdateAction;
 class Path {
  public:
   Path();
+  ~Path();
+
   void appendRule(HeadAction head, StateAction state, UpdateAction update);
   void handlePkt(bess::PacketBatch *unit);
   
   void set_port(Module *port);
   void set_fid(std::string *fid);
-  const std::string& fid();
+  const std::string *fid();
   
  private:
-  std::string fid_;
+  std::string *fid_;
   Module *port_;
   
   std::vector<HeadAction> heads;
