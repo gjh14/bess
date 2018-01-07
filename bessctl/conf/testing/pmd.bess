@@ -1,9 +1,10 @@
 port1::PMDPort(port_id = 0, num_inc_q = 1, num_out_q = 1)
 port2::PMDPort(port_id = 1, num_inc_q = 1, num_out_q = 1)
-# pcap::PCAPPort(dev = "/home/kvm/bess/bessctl/conf/testing/input.pcap")
+# pcap::PCAPPort(dev = "input.pcap")
 # QueueInc(port = port1, qid = 0) -> Sink()
 # PortInc(port = pcap) -> QueueOut(port = port2, qid = 0)
 source1::Source()
 source1.set_burst(burst = 1)
 source1 -> QueueOut(port = port2, qid = 0)
 # QueueInc(port = port1, qid = 0) -> QueueOut(port = port2, qid = 0)
+

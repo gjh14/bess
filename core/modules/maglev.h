@@ -15,14 +15,12 @@ class Maglev final: public Module{
   };
   
   static const Commands cmds;
-  Maglev() : Module() { max_allowed_workers_ = Worker::kMaxWorkers; }
   
   CommandResponse Init(const bess::pb::MaglevArg &arg);
-  
-  void ProcessBatch(bess::PacketBatch *batch) override;
-  
   CommandResponse CommandModify(const bess::pb::MaglevCommandArg &arg);
   CommandResponse CommandClear(const bess::pb::EmptyArg &arg);
+  
+  void ProcessBatch(bess::PacketBatch *batch) override;
   
  private:
   using be32_t = bess::utils::be32_t;

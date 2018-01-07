@@ -86,9 +86,10 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
   using bess::utils::Ethernet;
   using bess::utils::Ipv4;
   using bess::utils::Udp;
-
-  gate_idx_t out_gates[bess::PacketBatch::kMaxBurst];
-
+  
+  bess::PacketBatch out_batch;
+  out_batch.clear();
+  
   int cnt = batch->cnt();
   for (int i = 0; i < cnt; i++) {
     bess::Packet *pkt = batch->pkts()[i];
@@ -103,12 +104,14 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
       
     HeadAction head;
     if(gate == ndsts){
-      out_gates[i] = DROP_GATE;
       head.type = HeadAction::DROP;
+      bess::Packet::Free(pkt);    
     }else{
-      out_gates[i] = 0;
+      ip -> dst = be32_t(dsts[gate].dst_ip);
+      udp -> dst_port = be16_t(dsts[gate].dst_port);
       head.modify(HeadAction::DST_IP, dsts[gate].dst_ip);
       head.modify(HeadAction::DST_PORT, dsts[gate].dst_port);
+      out_batch.add(pkt);
     }
     
     StateAction state;
@@ -126,7 +129,7 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
     batch->path()->appendRule(head, state, update);
   }
   
-  RunSplit(out_gates, batch);
+  RunNextModule(out_batch);
 }
 
 ADD_MODULE(Maglev, "maglev", "Load Balance System from Google")
