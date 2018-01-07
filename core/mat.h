@@ -8,15 +8,19 @@
 
 class MAT {
  public:
+  static const uint32_t MAX_PATHS = 999997;
+  
   MAT();
   ~MAT();
   bool checkMAT(bess::PacketBatch *unit);
 
  private:
-  std::unordered_map<std::string, Path *, std::hash<std::string>, std::equal_to<std::string>> mat;
+ 
+  Path[MAX_PATHS] paths;
+  // std::unordered_map<std::string, Path *, std::hash<std::string>, std::equal_to<std::string>> mat;
   
   void appendData(std::string &fid, uint32_t num, int len);
-  void getFID(bess::Packet *pkt, std::string &fid);
+  void getFID(bess::Packet *pkt, std::string &fid, uint64_t hash);
 };
 
 #endif

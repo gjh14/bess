@@ -7,7 +7,24 @@
 #include "utils/udp.h"
 
 Path::Path(){
-  port = nullptr;
+  fid_ = nullptr;
+  port_ = nullptr;
+}
+
+void Path::set_fid(std::string *fid){
+  fid_ = fid;
+  total.type = total.pos = 0;
+  heads.clear();
+  states.clear();
+  updates.clear();
+}
+
+const std::string& fid(){
+  return *fid_;
+}
+
+void Path::set_port(Module* port){
+  port_ = port;
 }
 
 void Path::appendRule(HeadAction head, StateAction state, UpdateAction update){
@@ -35,8 +52,8 @@ void Path::handlePkt(bess::PacketBatch *unit){
   }
 
   handleHead(pkt);
-  if(port != nullptr)
-    port->ProcessBatch(unit);
+  if(port_ != nullptr)
+    port_->ProcessBatch(unit);
   else
     bess::Packet::Free(pkt);
 }
@@ -49,7 +66,7 @@ void Path::handleHead(bess::Packet *pkt){
   using bess::utils::be16_t;
 
   if(total.type & HeadAction::DROP){
-    port = nullptr;
+    port_ = nullptr;
     return;
   }
 
@@ -78,9 +95,5 @@ void Path::handleHead(bess::Packet *pkt){
         }
     // TODO: correct checksum
   }
-}
-
-void Path::set_port(Module* module){
-  port = module;
 }
 

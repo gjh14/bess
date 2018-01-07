@@ -67,10 +67,13 @@ class Path {
   void appendRule(HeadAction head, StateAction state, UpdateAction update);
   void handlePkt(bess::PacketBatch *unit);
   
-  void set_port(Module *module);
+  void set_port(Module *port);
+  void set_fid(std::string *fid);
+  const std::string& fid();
   
  private:
-  Module *port;
+  std::string fid_;
+  Module *port_;
   
   std::vector<HeadAction> heads;
   std::vector<StateAction> states;
