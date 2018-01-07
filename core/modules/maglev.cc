@@ -129,7 +129,7 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
     batch->path()->appendRule(head, state, update);
   }
   
-  RunNextModule(out_batch);
+  RunNextModule(&out_batch);
 }
 
 ADD_MODULE(Maglev, "maglev", "Load Balance System from Google")

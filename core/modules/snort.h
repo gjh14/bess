@@ -1,6 +1,12 @@
 #ifndef BESS_MODULES_SNORT_H_
 #define BESS_MODULES_SNORT_H_
 
+#include <arpa/inet.h>
+#include <ctype.h>
+#include <math.h>
+#include <netdb.h>
+#include <sys/socket.h>
+
 #include "../module.h"
 #include "../pb/module_msg.pb.h"
 
@@ -33,7 +39,7 @@ class Snort final : public Module {
     u_int pattern_size;  /* size of app layer pattern */
     char *pattern_buf;   /* app layer pattern to match on */
     Rule *next;  /* ptr to the next rule */
-  }
+  };
 
   struct PrintIP {
     u_char timestamp[64];   /* packet timestamp */
@@ -103,7 +109,7 @@ class Snort final : public Module {
 
   void ParsePattern(char *rule);
   void ParseRule(char *rule);
-  void ParseRulesFile(char *file);
+  void ParseRulesFile(const char *file);
   void ParseRuleOptions(char *rule);
   int ParsePort(char *rule_port, u_short *hi_port, u_short *lo_port, char *proto, int *not_flag);
   int ParseIP(char *addr, u_long *ip_addr, u_long *netmask);
@@ -120,6 +126,8 @@ class Snort final : public Module {
   int CheckRules(Rule *list, NetData net, PrintIP pip);
   int mSearch( char *buf, int blen, char *ptrn, int plen);
 
+  void clear();
+  void snort_pktcon(struct bess::Packet *pkt, NetData& net);
 };
 
 #endif

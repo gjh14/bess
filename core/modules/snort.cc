@@ -1,18 +1,27 @@
 #include "snort.h"
 
-#include <arpa/inet.h>
-#include <ctype.h>
-#include <math.h>
-#include <netdb.h>
-#include <sys/socket.h>
+#include "../utils/ether.h"
+#include "../utils/ip.h"
 
-#include "onvm_mgr.h"
-#include "onvm_pkt.h"
-#include "onvm_nf.h"
-#include "onvm_init.h"
-#include "onvm_pkt_helper.h"
-#include "onvm_common.h"
-#include "fastpath_pkt.h"
+#define STD_BUF  256
+
+/*  D E F I N E S  ************************************************************/
+#define RULE_LOG   0
+#define RULE_PASS  1
+#define RULE_ALERT 2
+
+#define ANY_SRC_IP     0x01
+#define ANY_DST_IP     0x02
+#define ANY_SRC_PORT   0x04
+#define ANY_DST_PORT   0x08
+#define ANY_FLAGS      0x10
+
+#define R_FIN          0x01
+#define R_SYN          0x02
+#define R_RST          0x04
+#define R_PSH          0x08
+#define R_ACK          0x10
+#define R_URG          0x20
 
 /****************************************************************************
  *
@@ -687,7 +696,7 @@ void Snort::ParseRuleOptions(char *rule)
  *
  ***************************************************************************/
 
- void Snort::ParseRulesFile(char *file)
+ void Snort::ParseRulesFile(const char *file)
 {
    FILE *thefp;       /* file pointer for the rules file */
    char buf[STD_BUF]; /* file read buffer */
@@ -1196,7 +1205,7 @@ void Snort::ParseIcode(char *type)
  *      failure (substr not in str)
  *
  ****************************************************************/
-int Sonrt::mSearch( char *buf, int blen, char *ptrn, int plen)
+int Snort::mSearch( char *buf, int blen, char *ptrn, int plen)
 {
    char *eob = buf + blen; /* end of buffer */
    int pidx;
@@ -1430,13 +1439,12 @@ bottom:
    return 0;
 }
 
-NetData Snort::snort_pktcon(struct bess::Packet *pkt){
+void Snort::snort_pktcon(struct bess::Packet *pkt, NetData &net){
   using bess::utils::Ethernet;
   using bess::utils::Ipv4;
   Ethernet *eth = pkt->head_data<Ethernet *>();
   Ipv4 *ip = reinterpret_cast<Ipv4 *>(eth + 1);
   
-  NetData net;
   uint8_t *d = reinterpret_cast<uint8_t *>(ip);
   d = d + 14;
   net.sip = 0; 
@@ -1446,7 +1454,7 @@ NetData Snort::snort_pktcon(struct bess::Packet *pkt){
   }
   net.sip = net.sip + *(d +12 + 3);
   net.dip = 0; 
-  for(i = 0;i < 3;i ++) {
+  for(int i = 0;i < 3; i++) {
     net.dip = net.dip + *(d +16 + i);
     net.dip = net.dip << 8;
   }
@@ -1467,7 +1475,7 @@ NetData Snort::snort_pktcon(struct bess::Packet *pkt){
     unsigned char ip_header_len = ((*d << 4) >> 4) * 4;
     unsigned short ip_len = ((*(d + 2)) << 8) + (*(d + 3));
     unsigned int tcp_header_len = ((*(d + ip_header_len + 12)) >> 4) * 4;
-    pip.data = (char *)(d + ip_header_len + tcp_header_slen);
+    pip.data = (char *)(d + ip_header_len + tcp_header_len);
     pip.dsize = (unsigned int)ip_len - ip_header_len - tcp_header_len;		
     
     // printf("ip_header_len:%d\n",ip_header_len);
@@ -1484,19 +1492,13 @@ NetData Snort::snort_pktcon(struct bess::Packet *pkt){
   // printf("net.proto:%d\n",net.proto);
   // printf("net.tcp_flags:%d\n",net.tcp_flags);
   // printf("pip.ttl:%d\n",pip.ttl);
-  return net;	
 }
 
 const Commands Snort::cmds = {
     {"add", "SnortdArg", MODULE_CMD_FUNC(&Snort::CommandAdd),
      Command::Command::THREAD_UNSAFE},
-    {"clear", "EmptyArg", MODULE_CMD_FUNC(&Maglev::CommandClear),
+    {"clear", "EmptyArg", MODULE_CMD_FUNC(&Snort::CommandClear),
      Command::Command::THREAD_UNSAFE}};
-     
-Snort::Snort(){
-  PassList = LogList = AlertList = nullptr;
-  clear();
-}
 
 Snort::~Snort(){
   clear();
@@ -1521,31 +1523,35 @@ CommandResponse Snort::CommandClear(const bess::pb::EmptyArg &){
 void Snort::clear() {
   file_line = rule_count = 0;
 
-  for(Rule *it = PassList it != nullptr; it = next){
-    next = it -> next;
+  for(Rule *it = PassList; it != nullptr; ){
+    Rule *next = it -> next;
     delete it;
+    it = next;
   }
-  for(Rule *it = LogList it != nullptr; it = next){
-    next = it -> next;
+  for(Rule *it = LogList; it != nullptr; ){
+    Rule *next = it -> next;
     delete it;
+    it = next;
   }
-  for(Rule *it = AlertList it != nullptr; it = next){
-    next = it -> next;
+  for(Rule *it = AlertList; it != nullptr; ){
+    Rule *next = it -> next;
     delete it;
+    it = next;
   }
   PassList = LogList = AlertList = nullptr;
   
   memset(&pip, 0, sizeof(PrintIP));
 }
 
-void Snort::ProcessBatch(bess::Batch *batch){
+void Snort::ProcessBatch(bess::PacketBatch *batch){
   bess::PacketBatch out_batch;
   out_batch.clear();
   
   int cnt = batch->cnt();
   for (int i = 0; i < cnt; i++) {
     bess::Packet *pkt = batch->pkts()[i];
-    NetData net = snort_pktcon(pkt);
+    NetData net;
+    snort_pktcon(pkt, net);
     HeadAction head;
     
     if(CheckRules(AlertList, net, pip)){
@@ -1554,7 +1560,7 @@ void Snort::ProcessBatch(bess::Batch *batch){
     if(CheckRules(PassList, net, pip)){
     
     }
-    if(CheckRules(LogsList, net, pip)){
+    if(CheckRules(LogList, net, pip)){
       
     }
         
@@ -1568,7 +1574,7 @@ void Snort::ProcessBatch(bess::Batch *batch){
         if(CheckRules(PassList, net, pip)){
         
         }
-        if(CheckRules(LogsList, net, pip)){
+        if(CheckRules(LogList, net, pip)){
           
         }
         return false;

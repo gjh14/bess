@@ -929,6 +929,14 @@ message SetMetadataArg {
 message SinkArg {
 }
 
+
+/**
+ * Snort
+ */
+message SnortArg{
+ string file = 1;
+}
+
 /**
  * The Source module has a function `set_burst(...)` which
  * specifies the maximum number of packets to release in a single packetbatch
