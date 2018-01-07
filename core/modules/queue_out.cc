@@ -102,6 +102,8 @@ void QueueOut::ProcessBatch(bess::PacketBatch *batch) {
   // LOG(INFO) << "cnt: " << batch->cnt() <<" sent: " << sent_pkts;
   if(batch->path() != nullptr)
     batch->path()->set_port(this);
+  else
+    LOG(INFO) << "ERROR";
 }
 
 ADD_MODULE(QueueOut, "queue_out",

@@ -735,6 +735,7 @@ void Snort::ParseRuleOptions(char *rule)
    }
 
    printf("System configured with %d rules.\n",rule_count);
+   LOG(INFO) << "Rule Count: " << rule_count;
 
 // #ifdef DEBUG
    // DumpRuleList(AlertList);
@@ -1555,31 +1556,23 @@ void Snort::ProcessBatch(bess::PacketBatch *batch){
     snort_pktcon(pkt, net);
     HeadAction head;
     
-    if(CheckRules(AlertList, net, pip)){
-      
-    }
-    if(CheckRules(PassList, net, pip)){
-    
-    }
-    if(CheckRules(LogList, net, pip)){
-      
-    }
-        
+    CheckRules(AlertList, net, pip);
+    CheckRules(PassList, net, pip);
+    CheckRules(LogList, net, pip);
+   
+    out_batch.add(pkt);
+
     StateAction state;
     state.type = StateAction::READ;
     state.action = 
       [&](bess::Packet *pkt[[maybe_unused]]) ->bool {
         NetData net;
         snort_pktcon(pkt, net);
-        if(CheckRules(AlertList, net, pip)){
-        
-        }
-        if(CheckRules(PassList, net, pip)){
-        
-        }
-        if(CheckRules(LogList, net, pip)){
-          
-        }
+
+        CheckRules(AlertList, net, pip);
+        CheckRules(PassList, net, pip);
+        CheckRules(LogList, net, pip);
+
         return false;
       };
       
@@ -1587,8 +1580,12 @@ void Snort::ProcessBatch(bess::PacketBatch *batch){
       [&](bess::PacketBatch *unit) {
         ProcessBatch(unit);
       };
-    batch->path()->appendRule(head, state, update);
+    if(batch->path() != nullptr)
+      batch->path()->appendRule(head, state, update);
   }
+
+  out_batch.set_path(batch->path());
+  RunNextModule(&out_batch);
 }
 
 ADD_MODULE(Snort, "snort",

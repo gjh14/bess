@@ -89,6 +89,8 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
   
   bess::PacketBatch out_batch;
   out_batch.clear();
+  bess::PacketBatch free_batch;
+  free_batch.clear();
   
   int cnt = batch->cnt();
   for (int i = 0; i < cnt; i++) {
@@ -105,7 +107,7 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
     HeadAction head;
     if(gate == ndsts){
       head.type = HeadAction::DROP;
-      bess::Packet::Free(pkt);    
+      free_batch.add(pkt);
     }else{
       ip -> dst = be32_t(dsts[gate].dst_ip);
       udp -> dst_port = be16_t(dsts[gate].dst_port);
@@ -128,7 +130,10 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
       };
     batch->path()->appendRule(head, state, update);
   }
-  
+
+  bess::Packet::Free(&free_batch);
+
+  out_batch.set_path(batch->path());
   RunNextModule(&out_batch);
 }
 

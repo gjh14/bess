@@ -509,7 +509,7 @@ void FlowGen::GeneratePackets(bess::PacketBatch *batch) {
   }
 }
 
-struct task_result FlowGen::RunTask(Task *task, void *) {
+struct task_result FlowGen::RunTask(Task *task[[maybe_unused]], void *) {
   if (children_overload_ > 0) {
     return {
       .block = true,

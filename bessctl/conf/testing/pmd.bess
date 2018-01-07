@@ -5,6 +5,6 @@ port2::PMDPort(port_id = 1, num_inc_q = 1, num_out_q = 1)
 # PortInc(port = pcap) -> QueueOut(port = port2, qid = 0)
 source1::Source()
 source1.set_burst(burst = 1)
-source1 -> QueueOut(port = port2, qid = 0)
-# QueueInc(port = port1, qid = 0) -> QueueOut(port = port2, qid = 0)
+# source1 -> QueueOut(port = port2, qid = 0)
+QueueInc(port = port1, qid = 0) -> QueueOut(port = port2, qid = 0)
 

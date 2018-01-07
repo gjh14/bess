@@ -47,7 +47,7 @@ class PacketBatch {
   Packet *const *pkts() const { return pkts_; }
   Packet **pkts() { return pkts_; }
 
-  void clear() { cnt_ = 0; }
+  void clear() { cnt_ = 0; path_ = nullptr; }
 
   // WARNING: this function has no bounds checks and so it's possible to
   // overrun the buffer by calling this. We are not adding bounds check because

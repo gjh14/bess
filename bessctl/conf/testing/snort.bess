@@ -1,3 +1,19 @@
+import scapy.all as scapy
+
+pkt_size = int($BESS_PKT_SIZE!'60')
+assert(60 <= pkt_size <= 1522)
+
+eth = scapy.Ether(src='02:1e:67:9f:4d:ae', dst='06:16:3e:1b:72:32')
+ip = scapy.IP(src='10.0.0.1', dst='10.0.0.2')
+tcp = scapy.TCP(sport=10001, dport=10002)
+payload = ('hello' + '0123456789' * 200)[:pkt_size-len(eth/ip/tcp)]
+pkt = eth/ip/tcp/payload
+pkt_data = bytes(pkt)
+
+flowgen::FlowGen(template=pkt_data, pps=1e6, flow_rate = 1e4, flow_duration = 10.0, arrival='exponential', duration='pareto', quick_rampup=True)
+
+port1::PMDPort(port_id = 0, num_inc_q = 1, num_out_q = 1)
+port2::PMDPort(port_id = 1, num_inc_q = 1, num_out_q = 1)
 snort::Snort(file = "RULES.SAMPLE")
-Source() -> snort -> Sink()
+flowgen -> snort -> QueueOut(port = port2, qid = 0)
 

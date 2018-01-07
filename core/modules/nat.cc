@@ -390,6 +390,7 @@ inline void NAT::DoProcessBatch(bess::PacketBatch *batch) {
 
   bess::Packet::Free(&free_batch);
 
+  out_batch.set_path(batch->path());
   RunChooseModule(static_cast<gate_idx_t>(dir), &out_batch);
 }
 
