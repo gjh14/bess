@@ -33,6 +33,7 @@ void Path::handlePkt(bess::PacketBatch *unit){
       return;
     }
   }
+
   handleHead(pkt);
   if(port != nullptr)
     port->ProcessBatch(unit);
@@ -47,11 +48,17 @@ void Path::handleHead(bess::Packet *pkt){
   using bess::utils::be32_t;
   using bess::utils::be16_t;
 
+  if(total.type & HeadAction::DROP){
+    port = nullptr;
+    return;
+  }
+
   Ethernet *eth = pkt->head_data<Ethernet *>();
   Ipv4 *ip = reinterpret_cast<Ipv4 *>(eth + 1);
   size_t ip_bytes = ip->header_length << 2;
   Udp *udp = reinterpret_cast<Udp *>(reinterpret_cast<uint8_t *>(ip) + ip_bytes);
-  if(total.type == HeadAction::MODIFY){
+
+  if(total.type & HeadAction::MODIFY){
     for(unsigned i = 0; i < HeadAction::POSNUM; ++i)
       if(total.pos & (1 << i))
         switch(i){

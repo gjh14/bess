@@ -79,9 +79,8 @@ void Task::collect(bess::PacketBatch *batch, Module *module) {
   for (int i = 0; i < cnt; ++i) {
     unit.clear();
   	unit.add(batch->pkts()[i]);
-    if (gmat.checkMAT(&unit))
-      bess::Packet::Free(&unit);
-    else
+    if (!gmat.checkMAT(&unit))
       module->RunNextModule(&unit);
   }
 }
+

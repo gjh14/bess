@@ -32,10 +32,10 @@ void MAT::getFID(bess::Packet *pkt, std::string &fid) {
   Udp *udp = reinterpret_cast<Udp *>(reinterpret_cast<uint8_t *>(ip) + ip_bytes);
   appendData(fid, ip->protocol, 1);
   appendData(fid, ip->src.raw_value(), 4);
-  appendData(fid, ip->dst.raw_value(), 4);
   appendData(fid, udp->src_port.raw_value(), 2);
+  appendData(fid, ip->dst.raw_value(), 4);
   appendData(fid, udp->dst_port.raw_value(), 2);
-  
+/*  
   using bess::utils::Tcp;
   Tcp* tcp = reinterpret_cast<Tcp *>(reinterpret_cast<uint8_t *>(ip) + ip_bytes);
   const char *datastart = ((const char *)tcp) + (tcp->offset * 4);
@@ -44,6 +44,7 @@ void MAT::getFID(bess::Packet *pkt, std::string &fid) {
     std::string payload(datastart, datalen);
     LOG(INFO) << fid << " " << datalen << " " << payload;
   }
+*/
 }
 
 bool MAT::checkMAT(bess::PacketBatch *unit){
@@ -59,6 +60,10 @@ bool MAT::checkMAT(bess::PacketBatch *unit){
   Path *path = new Path();
   mat[fid] = path;
   unit->set_path(path);
+
+  if(mat.size() % 1000 == 0)
+    LOG(INFO) << "GMAT " << mat.size();
+
   return false;
 }
 
