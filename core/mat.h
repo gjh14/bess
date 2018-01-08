@@ -8,7 +8,7 @@
 
 class MAT {
  public:
-  static const uint32_t MAX_PATHS = 999997;
+  static const uint32_t MAX_PATHS = 999983;
   
   MAT();
   ~MAT();

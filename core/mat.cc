@@ -16,7 +16,7 @@ MAT::~MAT() {
 }
 
 void MAT::appendData(std::string &fid, uint64_t &hash, uint32_t num, int len){
-  hash = ((hash << len) | num) % MAX_PATHS;
+  hash = ((hash << (len << 3)) | num) % MAX_PATHS;
   for (int i = 0; i < len; ++i){
     fid.push_back(num & 255);
     num >>= 8;
@@ -55,14 +55,19 @@ bool MAT::checkMAT(bess::PacketBatch *unit){
   uint64_t hash = 0;
   getFID(pkt, *fid, hash);
   unit->set_path(paths + hash);
-  if(paths[hash].fid() !=nullptr && *paths[hash].fid() == *fid){
+  if(paths[hash].fid() != nullptr && *paths[hash].fid() == *fid){
+    // LOG(INFO) << "PHIT: " << *paths[hash].fid() << " " << hash;
     delete fid;
     paths[hash].handlePkt(unit);
-    LOG(INFO) << hash << " HIT";
     return true;
   }
+/*
+  if(paths[hash].fid() != nullptr)
+    LOG(INFO) << "UNHIT: " << *fid << " " << *paths[hash].fid() << " " << hash;
+  else
+    LOG(INFO) << "FIRST: " << *fid << " " << hash;
+*/
   paths[hash].set_fid(fid);
-  LOG(INFO) << hash << " UNHIT";
   return false;
 /*  
   if (mat.count(fid)) {
