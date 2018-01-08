@@ -63,7 +63,9 @@ void Maglev::build(){
       gates.push_back(i);
       point.push_back(0);
     }
-    
+  if(gates.size() == 0)
+    return; 
+
   for(uint32_t linked = 0; linked < size;){
     for(unsigned i = 0; i < gates.size() && linked < size; ++i){
       for(; hash_table[shuffle_list[gates[i]][point[i]]] < ndsts; ++point[i]);
