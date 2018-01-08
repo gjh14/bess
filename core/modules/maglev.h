@@ -1,5 +1,5 @@
-#ifndef BESS_MODULES_ACL_H_
-#define BESS_MODULES_ACL_H_
+#ifndef BESS_MODULES_MAGLEV_H_
+#define BESS_MODULES_MAGLEV_H_
 
 #include <vector>
 
