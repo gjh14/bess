@@ -30,6 +30,8 @@
 
 #include "queue_out.h"
 
+#include <rte_cycles.h>
+
 #include "../port.h"
 #include "../utils/format.h"
 
@@ -100,6 +102,7 @@ void QueueOut::ProcessBatch(bess::PacketBatch *batch) {
   }
    
   // LOG(INFO) << "cnt: " << batch->cnt() <<" sent: " << sent_pkts;
+  // LOG(INFO) << "Send: " << rte_get_timer_cycles();
   if(batch->path() != nullptr)
     batch->path()->set_port(this);
   else

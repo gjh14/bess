@@ -1,5 +1,7 @@
 #include "path.h"
 
+#include <rte_cycles.h>
+
 #include "module.h"
 #include "packet.h"
 #include "utils/ether.h"
@@ -57,6 +59,7 @@ void Path::handlePkt(bess::PacketBatch *unit){
   }
 
   handleHead(pkt);
+  // LOG(INFO) << "Send: " << rte_get_timer_cycles();
   if(port_ != nullptr)
     port_->ProcessBatch(unit);
   else

@@ -182,13 +182,12 @@ static void init_eal(const char *prog_name[[maybe_unused]], int mb_per_socket[[m
   LOG(INFO) << "List argc = " << rte_args.Argc();
   for(int i = 0; i < rte_args.Argc(); ++i)
     LOG(INFO) << rte_args.Argv()[i];
-  LOG(INFO) << "rte_eal_init Start";
   int ret = rte_eal_init(rte_args.Argc(), rte_args.Argv());
   if (ret < 0) {
     LOG(ERROR) << "rte_eal_init() failed: ret = " << ret;
     exit(EXIT_FAILURE);
   }
-  LOG(INFO) << "rte_eal_init Finish";
+  LOG(INFO) << "Cycle: " << rte_get_timer_hz();
 
   enable_syslog();
   fclose(stdout);
