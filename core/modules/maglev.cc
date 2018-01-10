@@ -121,7 +121,7 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
     StateAction state;
     state.type = StateAction::UNRELATE;
     state.action = 
-      [=](bess::Packet *pkt[[maybe_unused]]) ->bool {
+      [=](bess::Packet *cpkt[[maybe_unused]]) ->bool {
         if(hash_table[value] != gate)
           LOG(INFO) << "CHANGE " << value << " " <<  gate << " " << hash_table[value];
         return hash_table[value] != gate;

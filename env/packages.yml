@@ -13,47 +13,47 @@
     - apt_repository: repo='deb http://apt.llvm.org/{{ ansible_distribution_release }}/ llvm-toolchain-{{ ansible_distribution_release }}-5.0 main'
       become: true
 
-#    - name: Install list of packages (this step may take a long time)
-#      apt: name={{item}} state=latest update_cache=yes
-#      become: true
-#      with_items:
-#        - apt-transport-https
-#        - ca-certificates
-#        - build-essential
-#        - g++-5
-#        - g++-6
-#        - g++-7
-#        - clang-3.8
-#        - clang-4.0
-#        - autoconf
-#        - automake
-#        - libtool
-#        - make
-#        - cmake
-#        - pkg-config
-#        - libpthread-stubs0-dev
-#        - libunwind8-dev
-#        - liblzma-dev
-#        - zlib1g-dev
-#        - libpcap-dev
-#        - libssl-dev
-#        - libnuma-dev
-#        - curl
-#        - git
-#        - python
-#        - python-dev
-#        - python-pip
+    - name: Install list of packages (this step may take a long time)
+      apt: name={{item}} # state=latest update_cache=yes
+      become: true
+      with_items:
+        - apt-transport-https
+        - ca-certificates
+        - build-essential
+        - g++-5
+        - g++-6
+        - g++-7
+        - clang-3.8
+        - clang-4.0
+        - autoconf
+        - automake
+        - libtool
+        - make
+        - cmake
+        - pkg-config
+        - libpthread-stubs0-dev
+        - libunwind8-dev
+        - liblzma-dev
+        - zlib1g-dev
+        - libpcap-dev
+        - libssl-dev
+        - libnuma-dev
+        - curl
+        - git
+        - python
+        - python-dev
+        - python-pip
         # We later overwrite python-scapy when installing, the newest version of scapy
         # via pip, but first running apt-get install is convenient because it fetches
         # various dependencies.
-#        - python-scapy
-#        - libgflags-dev
-#        - libgoogle-glog-dev
-#        - libgraph-easy-perl
-#        - libgtest-dev
-#        - linux-headers-generic
-#        - lcov
-#        - python-autopep8
+        - python-scapy
+        - libgflags-dev
+        - libgoogle-glog-dev
+        - libgraph-easy-perl
+        - libgtest-dev
+        - linux-headers-generic
+        - lcov
+        - python-autopep8
 
     # The server doesn't seem to have 32-bit binaries for clang-5.0 package.
     # Remove "when" once it's fixed.
@@ -62,12 +62,12 @@
       become: true
       when: ansible_machine != 'i386'
 
-#    - name: Set default gcc and g++ version
-#      alternatives: name={{item}} link=/usr/bin/{{item}} path=/usr/bin/{{item}}-5
-#      become: true
-#      with_items:
-#        - gcc
-#        - g++
+    - name: Set default gcc and g++ version
+      alternatives: name={{item}} link=/usr/bin/{{item}} path=/usr/bin/{{item}}-5
+      become: true
+      with_items:
+        - gcc
+        - g++
 
     - name: Install release-specific packages
       apt: name={{item}} state=latest update_cache=yes
@@ -76,10 +76,10 @@
         - python-pep8
       when: ansible_distribution == 'Ubuntu' and ansible_lsb.major_release|int >= 16
 
-#    - name: Install Linux headers of current running kernel
-#      apt: name=linux-headers-{{ ansible_kernel }} state=latest update_cache=yes
-#      become: true
-#      when: ansible_kernel | match(".*-generic")
+    - name: Install Linux headers of current running kernel
+      apt: name=linux-headers-{{ ansible_kernel }} # state=latest update_cache=yes
+      become: true
+      when: ansible_kernel | match(".*-generic")
 
     - name: Install list of Python packages
       pip:
@@ -103,23 +103,23 @@
 #    - name: Download gRPC
 #       git: repo=https://github.com/google/grpc dest=/tmp/grpc accept_hostkey=yes version=v1.3.2
 
-#    - name: Compile gRPC and its dependencies
-#      shell: make -j{{ ansible_processor_vcpus }} HAS_SYSTEM_PROTOBUF=false chdir=/home/nfv/setup/grpc
+    - name: Compile gRPC and its dependencies
+      shell: make -j{{ ansible_processor_vcpus }} HAS_SYSTEM_PROTOBUF=false chdir=/home/nfv/setup/grpc
 
-#    - name: Install gRPC
-#      shell: make install chdir=/home/nfv/setup/grpc
-#      become: true
+    - name: Install gRPC
+      shell: make install chdir=/home/nfv/setup/grpc
+      become: true
 
-#    - name: Install protobuf
-#      shell: make install chdir=/home/nfv/setup/grpc/third_party/protobuf
-#      become: true
+    - name: Install protobuf
+      shell: make install chdir=/home/nfv/setup/grpc/third_party/protobuf
+      become: true
 
-#    - name: Generate makefile for libbenchmark
-#      shell: cmake . chdir=/home/nfv/setup/grpc/third_party/benchmark
+    - name: Generate makefile for libbenchmark
+      shell: cmake . chdir=/home/nfv/setup/grpc/third_party/benchmark
 
-#    - name: Install libbenchmark
-#      shell: make install chdir=/home/nfv/setup/grpc/third_party/benchmark
-#      become: true
+    - name: Install libbenchmark
+      shell: make install chdir=/home/nfv/setup/grpc/third_party/benchmark
+      become: true
     
     - name: sudo ldconfig
       shell: ldconfig
