@@ -1546,9 +1546,6 @@ void Snort::clear() {
 }
 
 void Snort::ProcessBatch(bess::PacketBatch *batch){
-  bess::PacketBatch out_batch;
-  out_batch.clear();
-  
   int cnt = batch->cnt();
   for (int i = 0; i < cnt; i++) {
     bess::Packet *pkt = batch->pkts()[i];
@@ -1560,8 +1557,6 @@ void Snort::ProcessBatch(bess::PacketBatch *batch){
     CheckRules(PassList, net);
     CheckRules(LogList, net);
    
-    out_batch.add(pkt);
-
     StateAction state;
     state.type = StateAction::READ;
     state.action = 
@@ -1584,8 +1579,7 @@ void Snort::ProcessBatch(bess::PacketBatch *batch){
       batch->path()->appendRule(head, state, update);
   }
 
-  out_batch.set_path(batch->path());
-  RunNextModule(&out_batch);
+  RunNextModule(batch);
 }
 
 ADD_MODULE(Snort, "snort",

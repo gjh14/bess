@@ -105,8 +105,6 @@ void QueueOut::ProcessBatch(bess::PacketBatch *batch) {
   // LOG(INFO) << "Send: " << rte_get_timer_cycles();
   if(batch->path() != nullptr)
     batch->path()->set_port(this);
-  else
-    LOG(INFO) << "ERROR";
 }
 
 ADD_MODULE(QueueOut, "queue_out",

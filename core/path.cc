@@ -20,10 +20,10 @@ Path::~Path(){
 void Path::set_fid(std::string *fid){
   delete fid_;
   fid_ = fid;
-  total.type = total.pos = 0;
   heads.clear();
   states.clear();
   updates.clear();
+  total.clear();
 }
 
 const std::string *Path::fid(){
@@ -43,23 +43,26 @@ void Path::appendRule(HeadAction head, StateAction state, UpdateAction update){
 
 void Path::handlePkt(bess::PacketBatch *unit){
   bess::Packet *pkt = unit->pkts()[0];
-  for(unsigned i = 0; i < states.size(); ++i){
+  for(unsigned i = 0; i < states.size(); ++i)
     if(states[i].action(pkt)){
       UpdateAction next = updates[i];
-      total.type = total.pos = 0;
+      
+      total.clear();  
       for(unsigned j = 0; j < i; ++j)
         total.merge(heads[j]);
       handleHead(pkt);
+      
+      updates.erase(updates.begin() + i, updates.end());
       heads.erase(heads.begin() + i, heads.end());
       states.erase(states.begin() + i, states.end());
-      updates.erase(updates.begin() + i, updates.end());
+      
       next(unit);
+      
       return;
     }
-  }
 
   handleHead(pkt);
-  // LOG(INFO) << "Send: " << rte_get_timer_cycles();
+  
   if(port_ != nullptr)
     port_->ProcessBatch(unit);
   else
@@ -67,41 +70,32 @@ void Path::handlePkt(bess::PacketBatch *unit){
 }
 
 void Path::handleHead(bess::Packet *pkt){
-  using bess::utils::Ethernet;
-  using bess::utils::Ipv4;
-  using bess::utils::Udp;
-  using bess::utils::be32_t;
-  using bess::utils::be16_t;
+  static uint64_t tot = 0, sum = 0;
+  uint64_t start = rte_get_timer_cycles();
 
   if(total.type & HeadAction::DROP){
     port_ = nullptr;
     return;
   }
 
-  Ethernet *eth = pkt->head_data<Ethernet *>();
-  Ipv4 *ip = reinterpret_cast<Ipv4 *>(eth + 1);
-  size_t ip_bytes = ip->header_length << 2;
-  Udp *udp = reinterpret_cast<Udp *>(reinterpret_cast<uint8_t *>(ip) + ip_bytes);
+  uint8_t *protocol = (uint8_t *)pkt + 535;
+  uint32_t *src_ip = (uint32_t *)((uint8_t *)pkt + 538);
+  uint16_t *src_port = (uint16_t *)((uint8_t *) pkt + 546);
+  uint32_t *dst_ip = (uint32_t *)((uint8_t *)pkt + 542);
+  uint16_t *dst_port =  (uint16_t *)((uint8_t *) pkt + 548);
+  
+  *protocol = (*protocol & total.mask[0]) | total.value[0];
+  *src_ip = (*src_ip & total.mask[1]) | total.value[1];
+  *src_port = (*src_port & total.mask[2]) | total.value[2];
+  *dst_ip = (*dst_ip & total.mask[3]) | total.value[1];
+  *dst_port = (*dst_port & total.mask[4]) | total.value[4];
 
-  if(total.type & HeadAction::MODIFY){
-    for(unsigned i = 0; i < HeadAction::POSNUM; ++i)
-      if(total.pos & (1 << i))
-        switch(i){
-          case HeadAction::PROTO:
-          ip->protocol = total.value[i];
-          break;
-          case HeadAction::SRC_IP:
-          ip->src = be32_t(total.value[i]);
-          break;
-          case HeadAction::SRC_PORT:
-          udp->src_port = be16_t(total.value[i]);
-          case HeadAction::DST_IP:
-          ip->dst = be32_t(total.value[i]);
-          case HeadAction::DST_PORT:
-          udp->dst_port = be16_t(total.value[i]);
-          break;
-        }
-    // TODO: correct checksum
+  // TODO: correct checksum
+  
+  uint64_t end = rte_get_timer_cycles();
+  if(end - start < 60){
+    sum += end - start;
+    LOG(INFO) << end - start << " " << ++tot << " " << sum;
   }
 }
 
