@@ -342,7 +342,7 @@ inline void NAT::DoProcessBatch(bess::PacketBatch *batch) {
     StateAction state;
     state.type = StateAction::UNRELATE;
     state.action = 
-      [&](bess::Packet *pkt[[maybe_unused]]) -> bool {
+      [&](bess::Packet *cpkt[[maybe_unused]]) -> bool {
         return false;
       };
     auto update = 

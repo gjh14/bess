@@ -1,6 +1,7 @@
 #include "maglev.h"
 
 #include <algorithm>
+#include <rte_cycles.h>
 
 #include "../utils/ether.h"
 #include "../utils/ip.h"
@@ -19,7 +20,8 @@ CommandResponse Maglev::Init(const bess::pb::MaglevArg &arg){
     if(ParseIpv4Address(dst.dst_ip(), &addr)){
       MaglevDst new_dst = {
         .dst_ip = addr.raw_value(),
-        .dst_port = (uint16_t)dst.dst_port()};
+        .dst_port = be16_t(dst.dst_port()).raw_value()
+      };
       dsts.push_back(new_dst);
     }
   }
@@ -75,20 +77,16 @@ void Maglev::build(){
   }
 }
 
-uint32_t Maglev::hash(uint8_t protocol, be32_t src_ip, be16_t src_port, be32_t dst_ip, be16_t dst_port){
+uint32_t Maglev::hash(uint8_t protocol, uint32_t src_ip, uint16_t src_port, uint32_t dst_ip, uint16_t dst_port){
   uint64_t value = protocol;
-  value = ((value << 32) | src_ip.raw_value()) % size;
-  value = ((value << 16) | src_port.raw_value()) % size;
-  value = ((value << 32) | dst_ip.raw_value()) % size;
-  value = ((value << 16) | dst_port.raw_value()) % size;
+  value = ((value << 32) | src_ip) % size;
+  value = ((value << 16) | src_port) % size;
+  value = ((value << 32) | dst_ip) % size;
+  value = ((value << 16) | dst_port) % size;
   return (uint32_t)value;
 }
 
 void Maglev::ProcessBatch(bess::PacketBatch *batch) {
-  using bess::utils::Ethernet;
-  using bess::utils::Ipv4;
-  using bess::utils::Udp;
-  
   bess::PacketBatch out_batch;
   out_batch.clear();
   bess::PacketBatch free_batch;
@@ -98,12 +96,13 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
   for (int i = 0; i < cnt; i++) {
     bess::Packet *pkt = batch->pkts()[i];
 
-    Ethernet *eth = pkt->head_data<Ethernet *>();
-    Ipv4 *ip = reinterpret_cast<Ipv4 *>(eth + 1);
-    size_t ip_bytes = ip->header_length << 2;
-    Udp *udp = reinterpret_cast<Udp *>(reinterpret_cast<uint8_t *>(ip) + ip_bytes);
-
-    uint32_t value = hash(ip->protocol, ip->src, udp->src_port, ip->dst, udp->dst_port);
+    uint8_t *protocol = (uint8_t *)pkt + 535;
+    uint32_t *src_ip = (uint32_t *)((uint8_t *)pkt + 538);
+    uint16_t *src_port = (uint16_t *)((uint8_t *) pkt + 546);
+    uint32_t *dst_ip = (uint32_t *)((uint8_t *)pkt + 542);
+    uint16_t *dst_port =  (uint16_t *)((uint8_t *) pkt + 548);
+    
+    uint32_t value = hash(*protocol, *src_ip, *src_port, *dst_ip, *dst_port);
     uint32_t gate = hash_table[value];
       
     HeadAction head;
@@ -111,17 +110,27 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
       head.type = HeadAction::DROP;
       free_batch.add(pkt);
     }else{
-      ip -> dst = be32_t(dsts[gate].dst_ip);
-      udp -> dst_port = be16_t(dsts[gate].dst_port);
+      static uint64_t tot = 0, sum = 0;
+      uint64_t start = rte_get_timer_cycles();
+      start = rte_get_timer_cycles();
+      
+      *dst_ip = dsts[gate].dst_ip;
+      *dst_port = dsts[gate].dst_port;
       head.modify(HeadAction::DST_IP, dsts[gate].dst_ip);
       head.modify(HeadAction::DST_PORT, dsts[gate].dst_port);
+      
+      uint64_t end = rte_get_timer_cycles();
+      if(end - start < 50){
+        sum += end - start;
+        LOG(INFO) << end - start << " " << ++tot << " " << sum;
+      }
       out_batch.add(pkt);
     }
     
     StateAction state;
     state.type = StateAction::UNRELATE;
     state.action = 
-      [=](bess::Packet *pkt[[maybe_unused]]) ->bool {
+      [=](bess::Packet *cpkt[[maybe_unused]]) ->bool {
         if(hash_table[value] != gate)
           LOG(INFO) << "CHANGE " << value << " " <<  gate << " " << hash_table[value];
         return hash_table[value] != gate;
@@ -130,7 +139,8 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
       [&](bess::PacketBatch *unit) {
         ProcessBatch(unit);
       };
-    batch->path()->appendRule(head, state, update);
+    if(batch->path() != nullptr)
+      batch->path()->appendRule(head, state, update);
   }
 
   bess::Packet::Free(&free_batch);
@@ -140,4 +150,3 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
 }
 
 ADD_MODULE(Maglev, "maglev", "Load Balance System from Google")
-

@@ -123,7 +123,7 @@ class Snort final : public Module {
   void ParseItype(char *number);
   void ParseIcode(char *type);
   int strip(char *data);
-  int CheckRules(Rule *list, NetData net, PrintIP pip);
+  int CheckRules(Rule *list, NetData net);
   int mSearch( char *buf, int blen, char *ptrn, int plen);
 
   void clear();

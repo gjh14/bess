@@ -30,6 +30,7 @@
 
 #include "task.h"
 
+#include <rte_cycles.h>
 #include <unordered_set>
 
 #include "module.h"
@@ -73,14 +74,17 @@ void Task::AddActiveWorker(int wid) const {
  * GMAT
  */
 void Task::collect(bess::PacketBatch *batch, Module *module) {
+  // batch->set_path(nullptr);
+  // module->RunNextModule(batch);
+
   bess::PacketBatch unit;
   int cnt = batch->cnt();
-  // LOG(INFO) << "RECV " << cnt;
+
   for (int i = 0; i < cnt; ++i) {
     unit.clear();
-  	unit.add(batch->pkts()[i]);
+    unit.add(batch->pkts()[i]);
     if (!gmat.checkMAT(&unit))
       module->RunNextModule(&unit);
   }
-}
 
+}

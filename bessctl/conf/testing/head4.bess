@@ -1,0 +1,9 @@
+port::PMDPort(port_id = 0, num_inc_q = 1, num_out_q = 1)
+
+maglev1::Maglev(size = 7, dsts=[{'dst_ip': '1.2.3.4', 'dst_port': 5}, {'dst_ip': '1.2.3.4', 'dst_port': 6},  {'dst_ip': '1.2.3.4', 'dst_port': 7}])
+maglev2::Maglev(size = 7, dsts=[{'dst_ip': '1.2.3.4', 'dst_port': 5}, {'dst_ip': '1.2.3.4', 'dst_port': 6},  {'dst_ip': '1.2.3.4', 'dst_port': 7}])
+maglev3::Maglev(size = 7, dsts=[{'dst_ip': '1.2.3.4', 'dst_port': 5}, {'dst_ip': '1.2.3.4', 'dst_port': 6},  {'dst_ip': '1.2.3.4', 'dst_port': 7}])
+maglev4::Maglev(size = 7, dsts=[{'dst_ip': '1.2.3.4', 'dst_port': 5}, {'dst_ip': '1.2.3.4', 'dst_port': 6},  {'dst_ip': '1.2.3.4', 'dst_port': 7}])
+
+QueueInc(port = port, qid = 0) -> maglev1 -> maglev2 -> maglev3 -> maglev4 -> QueueOut(port = port, qid = 0)
+

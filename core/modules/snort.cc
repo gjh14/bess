@@ -1281,7 +1281,7 @@ int Snort::mSearch( char *buf, int blen, char *ptrn, int plen)
 
 
 
-int Snort::CheckRules(Rule *list, NetData net, PrintIP pip)
+int Snort::CheckRules(Rule *list, NetData net)
 {
    Rule *idx;  /* index ptr for walking the rules list */
 
@@ -1546,9 +1546,6 @@ void Snort::clear() {
 }
 
 void Snort::ProcessBatch(bess::PacketBatch *batch){
-  bess::PacketBatch out_batch;
-  out_batch.clear();
-  
   int cnt = batch->cnt();
   for (int i = 0; i < cnt; i++) {
     bess::Packet *pkt = batch->pkts()[i];
@@ -1556,22 +1553,20 @@ void Snort::ProcessBatch(bess::PacketBatch *batch){
     snort_pktcon(pkt, net);
     HeadAction head;
     
-    CheckRules(AlertList, net, pip);
-    CheckRules(PassList, net, pip);
-    CheckRules(LogList, net, pip);
+    CheckRules(AlertList, net);
+    CheckRules(PassList, net);
+    CheckRules(LogList, net);
    
-    out_batch.add(pkt);
-
     StateAction state;
     state.type = StateAction::READ;
     state.action = 
-      [&](bess::Packet *pkt[[maybe_unused]]) ->bool {
-        NetData net;
-        snort_pktcon(pkt, net);
+      [&](bess::Packet *cpkt[[maybe_unused]]) ->bool {
+        NetData cnet;
+        snort_pktcon(cpkt, cnet);
 
-        CheckRules(AlertList, net, pip);
-        CheckRules(PassList, net, pip);
-        CheckRules(LogList, net, pip);
+        CheckRules(AlertList, cnet);
+        CheckRules(PassList, cnet);
+        CheckRules(LogList, cnet);
 
         return false;
       };
@@ -1584,8 +1579,7 @@ void Snort::ProcessBatch(bess::PacketBatch *batch){
       batch->path()->appendRule(head, state, update);
   }
 
-  out_batch.set_path(batch->path());
-  RunNextModule(&out_batch);
+  RunNextModule(batch);
 }
 
 ADD_MODULE(Snort, "snort",

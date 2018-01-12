@@ -8,6 +8,9 @@
 #include "../utils/endian.h"
 
 class Maglev final: public Module{
+ using be32_t = bess::utils::be32_t;
+ using be16_t = bess::utils::be16_t;
+ 
  public:
    struct MaglevDst {
     uint32_t dst_ip;
@@ -23,9 +26,6 @@ class Maglev final: public Module{
   void ProcessBatch(bess::PacketBatch *batch) override;
   
  private:
-  using be32_t = bess::utils::be32_t;
-  using be16_t = bess::utils::be16_t;
-
   uint32_t size;
   uint32_t ndsts;
   std::vector<MaglevDst> dsts;
@@ -34,9 +34,8 @@ class Maglev final: public Module{
   std::vector<std::vector<uint32_t>> shuffle_list;
   std::vector<uint32_t> hash_table;
 
-  uint32_t hash(uint8_t protocol, be32_t src_ip, be16_t src_port, be32_t dst_ip, be16_t dst_port);
+  uint32_t hash(uint8_t protocol, uint32_t src_ip, uint16_t src_port, uint32_t dst_ip, uint16_t dst_port);
   void build();
 };
 
 #endif
-

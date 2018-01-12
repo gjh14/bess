@@ -33,8 +33,10 @@
 void Sink::ProcessBatch(bess::PacketBatch *batch) {
   int cnt = batch->cnt();
   for(int i = 0; i < cnt; ++i)
-    if(batch->path() != nullptr)
+    if(batch->path() != nullptr){
+      // LOG(INFO) << batch->path() << " " << this;
       batch->path()->set_port(this);
+    }
   bess::Packet::Free(batch);
 }
 

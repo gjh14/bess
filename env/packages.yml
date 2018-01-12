@@ -14,7 +14,7 @@
       become: true
 
     - name: Install list of packages (this step may take a long time)
-      apt: name={{item}} state=latest update_cache=yes
+      apt: name={{item}} # state=latest update_cache=yes
       become: true
       with_items:
         - apt-transport-https
@@ -77,7 +77,7 @@
       when: ansible_distribution == 'Ubuntu' and ansible_lsb.major_release|int >= 16
 
     - name: Install Linux headers of current running kernel
-      apt: name=linux-headers-{{ ansible_kernel }} state=latest update_cache=yes
+      apt: name=linux-headers-{{ ansible_kernel }} # state=latest update_cache=yes
       become: true
       when: ansible_kernel | match(".*-generic")
 
@@ -88,7 +88,7 @@
           # The latest release, 2.3.3 from Oct 2016, has a inet_ntop bug
           # that was fixed in a Jan 2017 commit.
           # TODO: Once v2.3.4 is released, install from pypi rather than git repo.
-#          - git+https://github.com/secdev/scapy
+#           - git+https://github.com/secdev/scapy
         editable: false
       become: true
 
@@ -101,25 +101,25 @@
       become: true
     
 #    - name: Download gRPC
-#      git: repo=https://github.com/google/grpc dest=/tmp/grpc accept_hostkey=yes version=v1.3.2
+#       git: repo=https://github.com/google/grpc dest=/tmp/grpc accept_hostkey=yes version=v1.3.2
 
-#    - name: Compile gRPC and its dependencies
-#      shell: make -j{{ ansible_processor_vcpus }} HAS_SYSTEM_PROTOBUF=false chdir=/tmp/grpc
+    - name: Compile gRPC and its dependencies
+      shell: make -j{{ ansible_processor_vcpus }} HAS_SYSTEM_PROTOBUF=false chdir=/home/nfv/setup/grpc
 
-#    - name: Install gRPC
-#      shell: make install chdir=/tmp/grpc
-#      become: true
+    - name: Install gRPC
+      shell: make install chdir=/home/nfv/setup/grpc
+      become: true
 
-#    - name: Install protobuf
-#      shell: make install chdir=/tmp/grpc/third_party/protobuf
-#      become: true
+    - name: Install protobuf
+      shell: make install chdir=/home/nfv/setup/grpc/third_party/protobuf
+      become: true
 
-#    - name: Generate makefile for libbenchmark
-#      shell: cmake . chdir=/tmp/grpc/third_party/benchmark
+    - name: Generate makefile for libbenchmark
+      shell: cmake . chdir=/home/nfv/setup/grpc/third_party/benchmark
 
-#    - name: Install libbenchmark
-#      shell: make install chdir=/tmp/grpc/third_party/benchmark
-#      become: true
+    - name: Install libbenchmark
+      shell: make install chdir=/home/nfv/setup/grpc/third_party/benchmark
+      become: true
     
     - name: sudo ldconfig
       shell: ldconfig

@@ -1,6 +1,7 @@
 #ifndef BESS_PATH_H_
 #define BESS_PATH_H_
 
+#include <cstring>
 #include <functional> 
 #include <vector>
 
@@ -20,35 +21,43 @@ struct HeadAction {
   typedef enum {PROTO = 0, SRC_IP, SRC_PORT, DST_IP, DST_PORT} POSITION;
 	
   uint32_t type;
-  uint32_t pos;
+  uint32_t mask[POSNUM];
   uint32_t value[POSNUM];
   
-  HeadAction(){
-  	type = pos = 0;
+  HeadAction() {
+    clear();
   }
   
-  void modify(uint32_t _pos, uint32_t _value){
-  	if(type & DROP)
+  void clear() {
+    type = 0;
+    memset(mask, -1, sizeof(mask));
+    memset(value, 0, sizeof(value)); 
+  }
+  
+  void modify(uint32_t _pos, uint32_t _value) {
+  	if(type == DROP)
   	  return;
   	type |= MODIFY;
-  	pos |= 1 << _pos;
+  	mask[_pos] = 0;
   	value[_pos] = _value;
   }
     
-  void merge(HeadAction action){
-    if(type & DROP)
+  void merge(HeadAction action) {
+    if(type == DROP)
       return;
-    if(action.type & DROP){
+  
+    if(action.type & DROP) {
       type = DROP;
-      pos = 0;
       return;
     }
-    if(action.type & MODIFY)
-        for(uint32_t i = 0; i < POSNUM; ++i)
-          if(action.pos & (1 << i)){
-            pos |= 1 << i;
-            value[i] = action.value[i];
-          }
+    
+    if(action.type & MODIFY) {
+      type |= MODIFY;
+      for(uint32_t i = 0; i < POSNUM; ++i) {
+        mask[i] &= action.mask[i];
+        value[i] &= (value[i] & action.mask[i]) | action.value[i];
+      }
+    }
   }
 };
 
@@ -86,4 +95,3 @@ class Path {
 };
 
 #endif
-

@@ -24,29 +24,17 @@ void MAT::appendData(std::string &fid, uint64_t &hash, uint32_t num, int len){
 }
 
 void MAT::getFID(bess::Packet *pkt, std::string &fid, uint64_t &hash) {
-  using bess::utils::Ethernet;
-  using bess::utils::Ipv4;
-  using bess::utils::Udp;
-  Ethernet *eth = pkt->head_data<Ethernet *>();
-  Ipv4 *ip = reinterpret_cast<Ipv4 *>(eth + 1);
-  size_t ip_bytes = ip->header_length << 2;
-  Udp *udp = reinterpret_cast<Udp *>(reinterpret_cast<uint8_t *>(ip) + ip_bytes);
-  appendData(fid, hash, ip->protocol, 1);
-  appendData(fid, hash, ip->src.raw_value(), 4);
-  appendData(fid, hash, udp->src_port.raw_value(), 2);
-  appendData(fid, hash, ip->dst.raw_value(), 4);
-  appendData(fid, hash, udp->dst_port.raw_value(), 2);
+  uint8_t *protocol = (uint8_t *)pkt + 535;
+  uint32_t *src_ip = (uint32_t *)((uint8_t *)pkt + 538);
+  uint16_t *src_port = (uint16_t *)((uint8_t *) pkt + 546);
+  uint32_t *dst_ip = (uint32_t *)((uint8_t *)pkt + 542);
+  uint16_t *dst_port =  (uint16_t *)((uint8_t *) pkt + 548);
   
-/*  
-  using bess::utils::Tcp;
-  Tcp* tcp = reinterpret_cast<Tcp *>(reinterpret_cast<uint8_t *>(ip) + ip_bytes);
-  const char *datastart = ((const char *)tcp) + (tcp->offset * 4);
-  uint32_t datalen = ip->length.value() - (tcp->offset * 4) - (ip_bytes);
-  if(datalen > 0 && datalen < 20 && datastart + datalen <= (char*)pkt + sizeof(bess::Packet)){
-    std::string payload(datastart, datalen);
-    LOG(INFO) << fid << " " << datalen << " " << payload;
-  }
-*/
+  appendData(fid, hash, *protocol, 1);
+  appendData(fid, hash, *src_ip, 4);
+  appendData(fid, hash, *src_port, 2);
+  appendData(fid, hash, *dst_ip, 4);
+  appendData(fid, hash, *dst_port, 2);
 }
 
 bool MAT::checkMAT(bess::PacketBatch *unit){
@@ -56,19 +44,14 @@ bool MAT::checkMAT(bess::PacketBatch *unit){
   getFID(pkt, *fid, hash);
   unit->set_path(paths + hash);
   if(paths[hash].fid() != nullptr && *paths[hash].fid() == *fid){
-    // LOG(INFO) << "PHIT: " << *paths[hash].fid() << " " << hash;
     delete fid;
     paths[hash].handlePkt(unit);
     return true;
   }
-/*
-  if(paths[hash].fid() != nullptr)
-    LOG(INFO) << "UNHIT: " << *fid << " " << *paths[hash].fid() << " " << hash;
-  else
-    LOG(INFO) << "FIRST: " << *fid << " " << hash;
-*/
+
   paths[hash].set_fid(fid);
   return false;
+  
 /*  
   if (mat.count(fid)) {
     Path *path = mat[fid];
@@ -82,4 +65,3 @@ bool MAT::checkMAT(bess::PacketBatch *unit){
   return false;
 */  
 }
-
