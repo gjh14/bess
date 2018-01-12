@@ -63,7 +63,7 @@
       when: ansible_machine != 'i386'
 
     - name: Set default gcc and g++ version
-      alternatives: name={{item}} link=/usr/bin/{{item}} path=/usr/bin/{{item}}-5
+      update-alternatives: name={{item}} link=/usr/bin/{{item}} path=/usr/bin/{{item}}-5
       become: true
       with_items:
         - gcc
