@@ -140,7 +140,7 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
         ProcessBatch(unit);
       };
     if(batch->path() != nullptr)
-      batch->path()->appendRule(head, state, update);
+      batch->path()->appendRule(this, head, state, update);
   }
 
   bess::Packet::Free(&free_batch);

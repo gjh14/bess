@@ -33,6 +33,7 @@
 #include <glog/logging.h>
 
 #include <algorithm>
+#include <semaphore.h>
 #include <sstream>
 
 #include "gate.h"

@@ -87,11 +87,14 @@ class Path {
   Module *port_;
   
   std::vector<HeadAction> heads;
+  HeadAction total;
+  
+  std::vector<Module *> modules;
   std::vector<StateAction> states;
   std::vector<UpdateAction> updates;
-  HeadAction total;
   
   void handleHead(bess::Packet *pkt);
 };
 
 #endif
+

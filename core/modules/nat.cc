@@ -361,7 +361,7 @@ inline void NAT::DoProcessBatch(bess::PacketBatch *batch) {
 
     if (!valid_protocol) {
       head.type = HeadAction::DROP;
-      batch->path()->appendRule(head, state, update);
+      batch->path()->appendRule(this, head, state, update);
       free_batch.add(pkt);
       continue;
     }
@@ -371,7 +371,7 @@ inline void NAT::DoProcessBatch(bess::PacketBatch *batch) {
     if (hash_item == nullptr) {
       if (dir != kForward || !(hash_item = CreateNewEntry(before, now))) {
         head.type = HeadAction::DROP;
-        batch->path()->appendRule(head, state, update);
+        batch->path()->appendRule(this, head, state, update);
         free_batch.add(pkt);
         continue;
       }
@@ -385,7 +385,7 @@ inline void NAT::DoProcessBatch(bess::PacketBatch *batch) {
     Stamp<dir>(ip, l4, before, hash_item->second.endpoint, head);
     
     out_batch.add(pkt);
-    batch->path()->appendRule(head, state, update);
+    batch->path()->appendRule(this, head, state, update);
   }
 
   bess::Packet::Free(&free_batch);

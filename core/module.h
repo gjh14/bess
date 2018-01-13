@@ -32,7 +32,10 @@
 #define BESS_MODULE_H_
 
 #include <atomic>
+#include <functional>
 #include <map>
+#include <pthread.h>
+#include <semaphore.h>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -202,8 +205,18 @@ class alignas(64) Module {
         node_constraints_(UNCONSTRAINED_SOCKET),
         min_allowed_workers_(1),
         max_allowed_workers_(1),
-        propagate_workers_(true) {}
-  virtual ~Module() {}
+        propagate_workers_(true) {  
+    sem_init(&state_sem, 0, 0);
+    sem_init(&act_sem, 0, 0);
+    act_flag = true;
+    pthread_create(&state_thread, NULL, act, NULL);
+  }
+  
+  virtual ~Module() {
+    act_flag = false;
+    pthread_join(state_thread, 0);
+    sem_destroy(&state_sem);
+  }
 
   CommandResponse Init(const bess::pb::EmptyArg &arg);
 
@@ -363,6 +376,17 @@ class alignas(64) Module {
     overload_ = false;
   }
 
+  void start(std::function<bool(bess::Packet *pkt)> func, bess::Packet *pkt){
+    state_func = func;
+    state_pkt = pkt;
+    sem_post(&state_sem);
+  }
+  
+  bool result(){
+    sem_wait(&act_sem);
+    return state_flag;
+  }
+
  private:
   // Module Destory, connect, task managements are only available with
   // ModuleGraph class
@@ -403,6 +427,22 @@ class alignas(64) Module {
   std::vector<bess::IGate *> igates_;
   std::vector<bess::OGate *> ogates_;
 
+  pthread_t state_thread;
+  sem_t state_sem;
+  std::function<bool(bess::Packet *pkt)> state_func;
+  bess::Packet* state_pkt;
+  bool state_result;
+  
+  sem_t act_sem;
+  bool act_flag;
+  void *act(){
+    while(act_flag){
+      sem_wait(&state_sem);
+      state_result = state_func(state_);
+      sem_post(&act_sem);
+    }
+  }
+  
  protected:
   // Set of active workers accessing this module.
   std::vector<bool> active_workers_;

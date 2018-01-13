@@ -104,7 +104,7 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
         [&](bess::PacketBatch *unit) {
           ProcessBatch(unit);
         };
-      batch->path()->appendRule(head, state, update);
+      batch->path()->appendRule(this, head, state, update);
     }
   }
   RunSplit(out_gates, batch);

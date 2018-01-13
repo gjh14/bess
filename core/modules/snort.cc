@@ -1576,7 +1576,7 @@ void Snort::ProcessBatch(bess::PacketBatch *batch){
         ProcessBatch(unit);
       };
     if(batch->path() != nullptr)
-      batch->path()->appendRule(head, state, update);
+      batch->path()->appendRule(this, head, state, update);
   }
 
   RunNextModule(batch);

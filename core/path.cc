@@ -34,7 +34,8 @@ void Path::set_port(Module* port){
   port_ = port;
 }
 
-void Path::appendRule(HeadAction head, StateAction state, UpdateAction update){
+void Path::appendRule(Modules *module, HeadAction head, StateAction state, UpdateAction update){
+  modules.push_back(module);
   heads.push_back(head);
   states.push_back(state);
   updates.push_back(update);
@@ -43,8 +44,11 @@ void Path::appendRule(HeadAction head, StateAction state, UpdateAction update){
 
 void Path::handlePkt(bess::PacketBatch *unit){
   bess::Packet *pkt = unit->pkts()[0];
-  for(unsigned i = 0; i < states.size(); ++i)
-    if(states[i].action(pkt)){
+  for(unsigned i = 0; i < modules.size(); ++i)
+    modules[i]->start(states[i].action, pkt);
+    
+  for(unsigned i = 0; i < modules.size(); ++i)
+    if(modules[i]->result()){
       UpdateAction next = updates[i];
       
       total.clear();  
@@ -52,12 +56,12 @@ void Path::handlePkt(bess::PacketBatch *unit){
         total.merge(heads[j]);
       handleHead(pkt);
       
-      updates.erase(updates.begin() + i, updates.end());
+      modules.erase(modules.begin() + i, modules.end());
       heads.erase(heads.begin() + i, heads.end());
       states.erase(states.begin() + i, states.end());
+      updates.erase(updates.begin() + i, updates.end());
       
-      next(unit);
-      
+      next(unit);  
       return;
     }
 
