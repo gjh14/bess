@@ -378,7 +378,7 @@ class alignas(64) Module {
 
     overload_ = false;
   }
-
+  
   void start(std::function<bool(bess::Packet *pkt)> func, bess::Packet *pkt) {
     state_func = func;
     state_pkt = pkt;

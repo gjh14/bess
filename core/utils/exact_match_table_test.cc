@@ -157,7 +157,7 @@ TEST(EmTableTest, FindMakeKeysPktBatch) {
     // not chained
     pkt->set_next(nullptr);
 
-    batch.add(pkt);
+    batch.add(pkt, nullptr);
   }
 
   const auto buffer_fn = [](const bess::Packet *pkt, const ExactMatchField &) {

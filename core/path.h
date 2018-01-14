@@ -42,20 +42,20 @@ struct HeadAction {
   	value[_pos] = _value;
   }
     
-  void merge(HeadAction action) {
-    if(type == DROP)
+  void merge(HeadAction *action) {
+    if(action == nullptr || type == DROP)
       return;
   
-    if(action.type & DROP) {
+    if(action->type & DROP) {
       type = DROP;
       return;
     }
     
-    if(action.type & MODIFY) {
+    if(action->type & MODIFY) {
       type |= MODIFY;
       for(uint32_t i = 0; i < POSNUM; ++i) {
-        mask[i] &= action.mask[i];
-        value[i] &= (value[i] & action.mask[i]) | action.value[i];
+        mask[i] &= action->mask[i];
+        value[i] &= (value[i] & action->mask[i]) | action->value[i];
       }
     }
   }
@@ -66,17 +66,16 @@ struct StateAction{
   
   TYPE type;
   std::function<bool(bess::Packet *pkt)> action;
+  void *arg;
 };
-
-typedef std::function<void(bess::PacketBatch *unit)> UpdateAction;
 
 class Path {
  public:
   Path();
   ~Path();
 
-  void appendRule(Module *module, HeadAction head, StateAction state, UpdateAction update);
-  void handlePkt(bess::PacketBatch *unit);
+  void appendRule(Module *module, HeadAction *head, StateAction state);
+  void handlePkt(bess::Packet *pkt);
   
   void set_port(Module *port);
   void set_fid(std::string *fid);
@@ -86,12 +85,11 @@ class Path {
   std::string *fid_;
   Module *port_;
   
-  std::vector<HeadAction> heads;
+  std::vector<HeadAction *> heads;
   HeadAction total;
   
   std::vector<Module *> modules;
   std::vector<StateAction> states;
-  std::vector<UpdateAction> updates;
   
   void handleHead(bess::Packet *pkt);
 };

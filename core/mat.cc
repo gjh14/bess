@@ -37,31 +37,23 @@ void MAT::getFID(bess::Packet *pkt, std::string &fid, uint64_t &hash) {
   appendData(fid, hash, *dst_port, 2);
 }
 
-bool MAT::checkMAT(bess::PacketBatch *unit){
-  bess::Packet *pkt = unit->pkts()[0];
+bool MAT::checkMAT(bess::Packet *pkt, Path *&path){
   std::string *fid = new std::string();
   uint64_t hash = 0;
   getFID(pkt, *fid, hash);
-  unit->set_path(paths + hash);
+  path = paths + hash;
   if(paths[hash].fid() != nullptr && *paths[hash].fid() == *fid){
     delete fid;
     paths[hash].handlePkt(unit);
     return true;
   }
-
   paths[hash].set_fid(fid);
   return false;
-  
-/*  
-  if (mat.count(fid)) {
-    Path *path = mat[fid];
-    unit->set_path(path);
-    path->handlePkt(unit);
-    return true;
-  }
-  Path *path = new Path();
-  mat[fid] = path;
-  unit->set_path(path);
-  return false;
-*/  
 }
+
+void MAT::runMAT(bess::PacketBatch *batch){
+  int cnt = batch->cnt();
+  for(int i = 0; i < cnt; ++i)
+    batch->path(i)->handlePkt(batch->pkts()[i]);
+}
+s

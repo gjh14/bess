@@ -26,6 +26,11 @@ class Maglev final: public Module{
   void ProcessBatch(bess::PacketBatch *batch) override;
   
  private:
+  struct MaglevArg{
+    uint32_t value;
+    uint32_t gate;
+  }
+ 
   uint32_t size;
   uint32_t ndsts;
   std::vector<MaglevDst> dsts;

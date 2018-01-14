@@ -107,7 +107,7 @@ TEST_F(ZeroCopyVPortTest, Send) {
     // not chained
     pkt->set_next(nullptr);
 
-    tx_batch.add(pkt);
+    tx_batch.add(pkt, nullptr);
   }
   cnt = port_->SendPackets(0, tx_batch.pkts(), tx_batch.cnt());
   ASSERT_EQ(tx_batch.cnt(), cnt);
@@ -132,7 +132,7 @@ TEST_F(ZeroCopyVPortTest, Recv) {
     // not chained
     pkt->set_next(nullptr);
 
-    tx_batch.add(pkt);
+    tx_batch.add(pkt, nullptr);
   }
 
   // Packets arrived from somewhere

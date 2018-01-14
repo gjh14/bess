@@ -272,17 +272,17 @@ NAT::HashTable::Entry *NAT::CreateNewEntry(const Endpoint &src_internal,
 
 template <NAT::Direction dir>
 inline void Stamp(Ipv4 *ip, void *l4, const Endpoint &before,
-                  const Endpoint &after, HeadAction &head) {
+                  const Endpoint &after, HeadAction *head) {
   IpProto proto = static_cast<IpProto>(ip->protocol);
   DCHECK_EQ(before.protocol, after.protocol);
   DCHECK_EQ(before.protocol, proto);
 
   if (dir == NAT::kForward) {
     ip->src = after.addr;
-    head.modify(HeadAction::SRC_IP, after.addr.raw_value());
+    head->modify(HeadAction::SRC_IP, after.addr.raw_value());
   } else {
     ip->dst = after.addr;
-    head.modify(HeadAction::DST_IP, after.addr.raw_value());
+    head->modify(HeadAction::DST_IP, after.addr.raw_value());
   }
 
   uint32_t l3_increment =
@@ -297,10 +297,10 @@ inline void Stamp(Ipv4 *ip, void *l4, const Endpoint &before,
     Udp *udp = static_cast<Udp *>(l4);
     if (dir == NAT::kForward) {
       udp->src_port = after.port;
-      head.modify(HeadAction::SRC_PORT, after.port.raw_value());
+      head->modify(HeadAction::SRC_PORT, after.port.raw_value());
     } else {
       udp->dst_port = after.port;
-      head.modify(HeadAction::DST_PORT, after.port.raw_value());
+      head->modify(HeadAction::DST_PORT, after.port.raw_value());
     }
 
     if (proto == IpProto::kTcp) {
@@ -338,17 +338,13 @@ inline void NAT::DoProcessBatch(bess::PacketBatch *batch) {
 
   for (int i = 0; i < cnt; i++) {
     bess::Packet *pkt = batch->pkts()[i];
-    HeadAction head;
+    Path *path = batch->path(i);
+    
+    HeadAction* head = new HeadAction();
     StateAction state;
     state.type = StateAction::UNRELATE;
-    state.action = 
-      [&](bess::Packet *cpkt[[maybe_unused]]) -> bool {
-        return false;
-      };
-    auto update = 
-      [&](bess::PacketBatch *unit) {
-        ProcessBatch(unit);
-      };
+    state.action = nullptr;
+    state.arg = nullptr;
 
     Ethernet *eth = pkt->head_data<Ethernet *>();
     Ipv4 *ip = reinterpret_cast<Ipv4 *>(eth + 1);
@@ -360,9 +356,10 @@ inline void NAT::DoProcessBatch(bess::PacketBatch *batch) {
     std::tie(valid_protocol, before) = ExtractEndpoint(ip, l4, dir);
 
     if (!valid_protocol) {
-      head.type = HeadAction::DROP;
-      batch->path()->appendRule(this, head, state, update);
-      free_batch.add(pkt);
+      head->type = HeadAction::DROP;
+      if(path != nullptr)
+        path->appendRule(this, head, state);
+      free_batch.add(pkt, nullptr);
       continue;
     }
 
@@ -370,9 +367,9 @@ inline void NAT::DoProcessBatch(bess::PacketBatch *batch) {
 
     if (hash_item == nullptr) {
       if (dir != kForward || !(hash_item = CreateNewEntry(before, now))) {
-        head.type = HeadAction::DROP;
-        batch->path()->appendRule(this, head, state, update);
-        free_batch.add(pkt);
+        head->type = HeadAction::DROP;
+        path->appendRule(this, head, state);
+        free_batch.add(pkt, nullptr);
         continue;
       }
     }
@@ -384,13 +381,13 @@ inline void NAT::DoProcessBatch(bess::PacketBatch *batch) {
 
     Stamp<dir>(ip, l4, before, hash_item->second.endpoint, head);
     
-    out_batch.add(pkt);
-    batch->path()->appendRule(this, head, state, update);
+    out_batch.add(pkt, path);
+    if(path != nullptr)
+      path->appendRule(this, head, state);
   }
 
   bess::Packet::Free(&free_batch);
 
-  out_batch.set_path(batch->path());
   RunChooseModule(static_cast<gate_idx_t>(dir), &out_batch);
 }
 

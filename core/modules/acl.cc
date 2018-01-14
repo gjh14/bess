@@ -49,6 +49,7 @@ CommandResponse ACL::Init(const bess::pb::ACLArg &arg) {
         .drop = rule.drop()};
     rules_.push_back(new_rule);
   }
+  ++time;
   return CommandSuccess();
 }
 
@@ -59,6 +60,7 @@ CommandResponse ACL::CommandAdd(const bess::pb::ACLArg &arg) {
 
 CommandResponse ACL::CommandClear(const bess::pb::EmptyArg &) {
   rules_.clear();
+  ++time;
   return CommandSuccess();
 }
 
@@ -91,21 +93,21 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
       }
     }
     
-    if(out_gates[i] == DROP_GATE){
-      HeadAction head;
-      head.type = HeadAction::DROP;
-      StateAction state;
-      state.type = StateAction::UNRELATE;
-      state.action = 
-        [&](bess::Packet *cpkt[[maybe_unused]]) ->bool {
-          return false;
-        };
-      auto update = 
-        [&](bess::PacketBatch *unit) {
-          ProcessBatch(unit);
-        };
-      batch->path()->appendRule(this, head, state, update);
-    }
+    HeadAction *head = new HeadAction();
+    state.type = StateAction::UNRELATE;
+    state.action =
+      [&](bess::Packet *pkt[[maybe_unused]], void *arg) ->bool {
+        ACLArg *check = (ACLArg*)arg;
+        return *check != time;
+      };
+    
+    ACLArg *arg = new ACLArg();
+    *arg = time;
+    state.arg = (void *)arg;
+    
+    if(out_gates[i] == DROP_GATE)
+      head->type = HeadAction::DROP;
+    batch->path(i)->appendRule(this, head, state);
   }
   RunSplit(out_gates, batch);
 }

@@ -1563,7 +1563,7 @@ void Snort::ProcessBatch(bess::PacketBatch *batch){
     CheckRules(PassList, net);
     CheckRules(LogList, net);
     
-    HeadAction head; 
+    HeadAction *head = nullptr;
     StateAction state;
     state.type = StateAction::READ;
     state.action = 
@@ -1577,13 +1577,11 @@ void Snort::ProcessBatch(bess::PacketBatch *batch){
 
         return false;
       };
-      
-    auto update = 
-      [&](bess::PacketBatch *unit) {
-        ProcessBatch(unit);
-      };
-    if(batch->path() != nullptr)
-      batch->path()->appendRule(this, head, state, update);
+          
+    state.arg = nullptr;
+
+    if(batch->path(i) != nullptr)
+      batch->path(i)->appendRule(this, head, state);
 
     uint64_t end = rte_get_timer_cycles();
     if(true){
@@ -1596,3 +1594,4 @@ void Snort::ProcessBatch(bess::PacketBatch *batch){
 }
 
 ADD_MODULE(Snort, "snort", "standard IDS")
+

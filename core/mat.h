@@ -12,7 +12,8 @@ class MAT {
   
   MAT();
   ~MAT();
-  bool checkMAT(bess::PacketBatch *unit);
+  bool checkMAT(bess::Packet *pkt, Path *&path);
+  void runMAT(bess::PacketBatch *batch);
 
  private:
  

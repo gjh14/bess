@@ -41,18 +41,29 @@ class Packet;
 class PacketBatch {
  public:
   int cnt() const { return cnt_; }
-  void set_cnt(int cnt) { cnt_ = cnt; }
-  void incr_cnt(int n = 1) { cnt_ += n; }
+  void set_cnt(int cnt) {
+    for(int i = 0; i < cnt; ++i)
+      paths_[i] = nullptr;
+    cnt_ = cnt;
+  }
+  void incr_cnt(int n = 1) {
+    for(int i = cnt_; i < cnt_ + n; ++i)
+      paths_[i] = nullptr;
+    cnt_ += n;
+  }
 
   Packet *const *pkts() const { return pkts_; }
   Packet **pkts() { return pkts_; }
 
-  void clear() { cnt_ = 0; path_ = nullptr; }
+  void clear() { cnt_ = 0; }
 
   // WARNING: this function has no bounds checks and so it's possible to
   // overrun the buffer by calling this. We are not adding bounds check because
   // we want maximum GOFAST.
-  void add(Packet *pkt) { pkts_[cnt_++] = pkt; }
+  void add(Packet *pkt, Path *path) {
+    paths_[cnt] = path;
+    pkts_[cnt_++] = pkt;
+  }
 
   bool empty() { return (cnt_ == 0); }
 
@@ -66,20 +77,16 @@ class PacketBatch {
   static const size_t kMaxBurst = 32;
   
   // fastpath
-  Path* path() const {
-    return path_;
+  Path* path(int pos) const {
+    return paths_[pos];
   }
   
-  void set_path(Path* path) { 
-    path_ = path;
-  }
-
  private:
   int cnt_;
   Packet *pkts_[kMaxBurst];
   
   // fastpath
-  Path* path_;
+  Path *paths_[kMaxBurst];
 };
 
 static_assert(std::is_pod<PacketBatch>::value, "PacketBatch is not a POD Type");

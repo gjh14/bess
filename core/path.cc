@@ -14,6 +14,8 @@ Path::Path(){
 }
 
 Path::~Path(){
+  for(auto head : heads)
+    delete head;
   delete fid_;
 }
 
@@ -34,50 +36,44 @@ void Path::set_port(Module* port){
   port_ = port;
 }
 
-void Path::appendRule(Module *module, HeadAction head, StateAction state, UpdateAction update){
+void Path::appendRule(Module *module, HeadAction *head, StateAction state){
   modules.push_back(module);
   heads.push_back(head);
   states.push_back(state);
-  updates.push_back(update);
   total.merge(head);
 }
 
-void Path::handlePkt(bess::PacketBatch *unit){
-  bess::Packet *pkt = unit->pkts()[0];
+void Path::handlePkt(bess::Packet *pkt){
   
   static uint64_t tot = 0, sum = 0;
   uint64_t start = rte_get_timer_cycles();
   start = rte_get_timer_cycles();
-
+  
   for(unsigned i = 0; i < modules.size(); ++i)
-    modules[i]->start(states[i].action, pkt);
-    
-  for(unsigned i = 0; i < modules.size(); ++i)
-    if(modules[i]->result()){
-      for(; i < modules.size(); ++i)
-        modules[i]->result();
-  // for(unsigned i = 0; i < modules.size(); ++i)
-    // if(states[i].action(pkt)){
-      UpdateAction next = updates[i];
+    if(states[i].action != nullptr && states[i].action(pkt, states[i].arg)){
+      Module trigger = modules[i];
       
       total.clear();  
       for(unsigned j = 0; j < i; ++j)
         total.merge(heads[j]);
+      for(unsigned j = i; j < heads.size(); ++j)
+        delete heads[j];
       handleHead(pkt);
       
       modules.erase(modules.begin() + i, modules.end());
       heads.erase(heads.begin() + i, heads.end());
       states.erase(states.begin() + i, states.end());
-      updates.erase(updates.begin() + i, updates.end());
-      
-      next(unit);  
+     
+      bess::PacketBatch unit;
+      unit.clear();
+      unit.add(pkt, this);
+      module->ProcessBatch(unit);
       return;
     }
   
   uint64_t end = rte_get_timer_cycles();
   sum += end - start;
   LOG(INFO) << end - start << " " << ++tot << " " << sum;
-
 
   handleHead(pkt);
   
