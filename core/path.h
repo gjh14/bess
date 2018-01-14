@@ -75,7 +75,7 @@ class Path {
   Path();
   ~Path();
 
-  void appendRule(HeadAction head, StateAction state, UpdateAction update);
+  void appendRule(Module *module, HeadAction head, StateAction state, UpdateAction update);
   void handlePkt(bess::PacketBatch *unit);
   
   void set_port(Module *port);

@@ -209,13 +209,16 @@ class alignas(64) Module {
     sem_init(&state_sem, 0, 0);
     sem_init(&act_sem, 0, 0);
     act_flag = true;
-    pthread_create(&state_thread, NULL, act, NULL);
+    pthread_create(&state_thread, 0, act, this);
   }
   
   virtual ~Module() {
+    state_func = nullptr;
     act_flag = false;
+    sem_post(&state_sem);
     pthread_join(state_thread, 0);
     sem_destroy(&state_sem);
+    sem_destroy(&act_sem);
   }
 
   CommandResponse Init(const bess::pb::EmptyArg &arg);
@@ -376,15 +379,15 @@ class alignas(64) Module {
     overload_ = false;
   }
 
-  void start(std::function<bool(bess::Packet *pkt)> func, bess::Packet *pkt){
+  void start(std::function<bool(bess::Packet *pkt)> func, bess::Packet *pkt) {
     state_func = func;
     state_pkt = pkt;
     sem_post(&state_sem);
   }
   
-  bool result(){
+  bool result() {
     sem_wait(&act_sem);
-    return state_flag;
+    return state_result;
   }
 
  private:
@@ -435,12 +438,15 @@ class alignas(64) Module {
   
   sem_t act_sem;
   bool act_flag;
-  void *act(){
-    while(act_flag){
-      sem_wait(&state_sem);
-      state_result = state_func(state_);
-      sem_post(&act_sem);
+  static void *act(void *ptr) {
+    Module *module = (Module *)ptr;
+    while(module->act_flag) {
+      sem_wait(&module->state_sem);
+      if(module->state_func != nullptr)
+        module->state_result = module->state_func(module->state_pkt);
+      sem_post(&module->act_sem);
     }
+    return 0;
   }
   
  protected:

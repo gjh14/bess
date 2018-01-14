@@ -1,5 +1,7 @@
 #include "snort.h"
 
+#include <rte_cycles.h>
+
 #include "../utils/ether.h"
 #include "../utils/ip.h"
 
@@ -1549,14 +1551,19 @@ void Snort::ProcessBatch(bess::PacketBatch *batch){
   int cnt = batch->cnt();
   for (int i = 0; i < cnt; i++) {
     bess::Packet *pkt = batch->pkts()[i];
+
+    static uint64_t tot = 0, sum = 0;
+    uint64_t start = rte_get_timer_cycles();
+    start = rte_get_timer_cycles();
+
     NetData net;
     snort_pktcon(pkt, net);
-    HeadAction head;
     
     CheckRules(AlertList, net);
     CheckRules(PassList, net);
     CheckRules(LogList, net);
-   
+    
+    HeadAction head; 
     StateAction state;
     state.type = StateAction::READ;
     state.action = 
@@ -1577,10 +1584,15 @@ void Snort::ProcessBatch(bess::PacketBatch *batch){
       };
     if(batch->path() != nullptr)
       batch->path()->appendRule(this, head, state, update);
+
+    uint64_t end = rte_get_timer_cycles();
+    if(true){
+      sum += end - start;
+      LOG(INFO) << end - start << " " << ++tot << " " << sum;
+    }
   }
 
   RunNextModule(batch);
 }
 
-ADD_MODULE(Snort, "snort",
-           "standard IDS")
+ADD_MODULE(Snort, "snort", "standard IDS")

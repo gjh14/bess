@@ -34,7 +34,7 @@ void Path::set_port(Module* port){
   port_ = port;
 }
 
-void Path::appendRule(Modules *module, HeadAction head, StateAction state, UpdateAction update){
+void Path::appendRule(Module *module, HeadAction head, StateAction state, UpdateAction update){
   modules.push_back(module);
   heads.push_back(head);
   states.push_back(state);
@@ -44,11 +44,20 @@ void Path::appendRule(Modules *module, HeadAction head, StateAction state, Updat
 
 void Path::handlePkt(bess::PacketBatch *unit){
   bess::Packet *pkt = unit->pkts()[0];
+  
+  static uint64_t tot = 0, sum = 0;
+  uint64_t start = rte_get_timer_cycles();
+  start = rte_get_timer_cycles();
+
   for(unsigned i = 0; i < modules.size(); ++i)
     modules[i]->start(states[i].action, pkt);
     
   for(unsigned i = 0; i < modules.size(); ++i)
     if(modules[i]->result()){
+      for(; i < modules.size(); ++i)
+        modules[i]->result();
+  // for(unsigned i = 0; i < modules.size(); ++i)
+    // if(states[i].action(pkt)){
       UpdateAction next = updates[i];
       
       total.clear();  
@@ -64,6 +73,11 @@ void Path::handlePkt(bess::PacketBatch *unit){
       next(unit);  
       return;
     }
+  
+  uint64_t end = rte_get_timer_cycles();
+  sum += end - start;
+  LOG(INFO) << end - start << " " << ++tot << " " << sum;
+
 
   handleHead(pkt);
   
@@ -74,8 +88,9 @@ void Path::handlePkt(bess::PacketBatch *unit){
 }
 
 void Path::handleHead(bess::Packet *pkt){
-  static uint64_t tot = 0, sum = 0;
-  uint64_t start = rte_get_timer_cycles();
+  // static uint64_t tot = 0, sum = 0;
+  // uint64_t start = rte_get_timer_cycles();
+  // start = rte_get_timer_cycles();
 
   if(total.type & HeadAction::DROP){
     port_ = nullptr;
@@ -96,10 +111,10 @@ void Path::handleHead(bess::Packet *pkt){
 
   // TODO: correct checksum
   
-  uint64_t end = rte_get_timer_cycles();
-  if(end - start < 60){
-    sum += end - start;
-    LOG(INFO) << end - start << " " << ++tot << " " << sum;
-  }
+  // uint64_t end = rte_get_timer_cycles();
+  // if(end - start < 60){
+    // sum += end - start;
+    // LOG(INFO) << end - start << " " << ++tot << " " << sum;
+  // }
 }
 

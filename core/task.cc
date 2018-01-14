@@ -74,8 +74,8 @@ void Task::AddActiveWorker(int wid) const {
  * GMAT
  */
 void Task::collect(bess::PacketBatch *batch, Module *module) {
-  // batch->set_path(nullptr);
-  // module->RunNextModule(batch);
+//   batch->set_path(nullptr);
+//   module->RunNextModule(batch);
 
   bess::PacketBatch unit;
   int cnt = batch->cnt();
@@ -86,5 +86,4 @@ void Task::collect(bess::PacketBatch *batch, Module *module) {
     if (!gmat.checkMAT(&unit))
       module->RunNextModule(&unit);
   }
-
 }
