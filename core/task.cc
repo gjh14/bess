@@ -87,9 +87,9 @@ void Task::collect(bess::PacketBatch *batch, Module *module) {
   for (int i = 0; i < cnt; ++i) {
     bess::Packet *pkt = batch->pkts()[i];
     Path *path = nullptr;
-    bool flag = gmat.checkMAT(pkt, path));
+    bool flag = gmat.checkMAT(pkt, path);
     if(visited.count(path)){
-      mat.runMAT(&hits);
+      gmat.runMAT(&hits);
       module->RunNextModule(&unhits);
       visited.clear();
       hits.clear();
@@ -101,7 +101,7 @@ void Task::collect(bess::PacketBatch *batch, Module *module) {
     else
       unhits.add(pkt, path);
   }
-  mat.runMAT(&hits);
+  gmat.runMAT(&hits);
   module->RunNextModule(&unhits);
 }
 

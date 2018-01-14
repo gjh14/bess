@@ -1504,6 +1504,18 @@ const Commands Snort::cmds = {
     {"clear", "EmptyArg", MODULE_CMD_FUNC(&Snort::CommandClear),
      Command::Command::THREAD_UNSAFE}};
 
+Snort::Snort() : Module() {
+  sfunc = [&](bess::Packet *pkt, void *arg[[maybe_unused]]) -> bool {
+      NetData net;
+      snort_pktcon(pkt, net);
+
+      CheckRules(AlertList, net);
+      CheckRules(PassList, net);
+      CheckRules(LogList, net);
+      return false;
+    };
+}
+
 Snort::~Snort(){
   clear();
 }
@@ -1566,18 +1578,7 @@ void Snort::ProcessBatch(bess::PacketBatch *batch){
     HeadAction *head = nullptr;
     StateAction state;
     state.type = StateAction::READ;
-    state.action = 
-      [&](bess::Packet *cpkt[[maybe_unused]]) ->bool {
-        NetData cnet;
-        snort_pktcon(cpkt, cnet);
-
-        CheckRules(AlertList, cnet);
-        CheckRules(PassList, cnet);
-        CheckRules(LogList, cnet);
-
-        return false;
-      };
-          
+    state.action = sfunc; 
     state.arg = nullptr;
 
     if(batch->path(i) != nullptr)

@@ -7,7 +7,7 @@
 #include "../pb/module_msg.pb.h"
 #include "../utils/endian.h"
 
-class Maglev final: public Module{
+class Maglev final: public Module {
  using be32_t = bess::utils::be32_t;
  using be16_t = bess::utils::be16_t;
  
@@ -19,6 +19,8 @@ class Maglev final: public Module{
   
   static const Commands cmds;
   
+  Maglev();
+ 
   CommandResponse Init(const bess::pb::MaglevArg &arg);
   CommandResponse CommandModify(const bess::pb::MaglevCommandArg &arg);
   CommandResponse CommandClear(const bess::pb::EmptyArg &arg);
@@ -29,7 +31,8 @@ class Maglev final: public Module{
   struct MaglevArg{
     uint32_t value;
     uint32_t gate;
-  }
+  };
+  StateAction::FUNC func;
  
   uint32_t size;
   uint32_t ndsts;

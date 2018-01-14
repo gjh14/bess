@@ -86,7 +86,8 @@ class Snort final : public Module {
     unsigned int proto;
     unsigned char tcp_flags;
   };
-  
+ 
+  Snort();
   ~Snort();
   
   static const Commands cmds;
@@ -128,6 +129,8 @@ class Snort final : public Module {
 
   void clear();
   bool snort_pktcon(struct bess::Packet *pkt, NetData& net);
+
+  StateAction::FUNC sfunc;
 };
 
 #endif

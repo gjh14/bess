@@ -35,51 +35,40 @@ struct HeadAction {
   }
   
   void modify(uint32_t _pos, uint32_t _value) {
-  	if(type == DROP)
-  	  return;
-  	type |= MODIFY;
-  	mask[_pos] = 0;
-  	value[_pos] = _value;
-  }
-    
-  void merge(HeadAction *action) {
-    if(action == nullptr || type == DROP)
+   if(type == DROP)
       return;
+    type |= MODIFY;
+    mask[_pos] = 0;
+    value[_pos] = _value;
+  }
   
-    if(action->type & DROP) {
-      type = DROP;
-      return;
-    }
-    
-    if(action->type & MODIFY) {
-      type |= MODIFY;
-      for(uint32_t i = 0; i < POSNUM; ++i) {
-        mask[i] &= action->mask[i];
-        value[i] &= (value[i] & action->mask[i]) | action->value[i];
-      }
-    }
-  }
+  void merge(HeadAction *action);
 };
 
 struct StateAction{
   typedef enum {READ, WRITE, UNRELATE} TYPE;
+  typedef std::function<bool(bess::Packet *pkt, void *arg)> FUNC;
   
+  StateAction() : arg(nullptr) {}
+  ~StateAction() { free(arg); }
+ 
   TYPE type;
-  std::function<bool(bess::Packet *pkt)> action;
+  FUNC action;
   void *arg;
 };
 
 class Path {
  public:
-  Path();
+  Path() : fid_(nullptr), port_(nullptr) {}
   ~Path();
 
   void appendRule(Module *module, HeadAction *head, StateAction state);
   void handlePkt(bess::Packet *pkt);
   
-  void set_port(Module *port);
+  void set_port(Module *port) { port_ = port; }
+  Module* port() { return port_; }
   void set_fid(std::string *fid);
-  const std::string *fid();
+  const std::string *fid() { return fid_; }
   
  private:
   std::string *fid_;

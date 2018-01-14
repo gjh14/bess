@@ -61,7 +61,7 @@ class PacketBatch {
   // overrun the buffer by calling this. We are not adding bounds check because
   // we want maximum GOFAST.
   void add(Packet *pkt, Path *path) {
-    paths_[cnt] = path;
+    paths_[cnt_] = path;
     pkts_[cnt_++] = pkt;
   }
 

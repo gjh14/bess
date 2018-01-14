@@ -8,9 +8,22 @@
 #include "utils/ip.h"
 #include "utils/udp.h"
 
-Path::Path(){
-  fid_ = nullptr;
-  port_ = nullptr;
+void HeadAction::merge(HeadAction *action) {
+  if(action == nullptr || type == DROP)
+    return;
+
+   if(action->type & DROP) {
+    type = DROP;
+    return;
+  }
+
+  if(action->type & MODIFY) {
+    type |= MODIFY;
+    for(uint32_t i = 0; i < POSNUM; ++i) {
+      mask[i] &= action->mask[i];
+      value[i] &= (value[i] & action->mask[i]) | action->value[i];
+    }
+  }
 }
 
 Path::~Path(){
@@ -24,16 +37,7 @@ void Path::set_fid(std::string *fid){
   fid_ = fid;
   heads.clear();
   states.clear();
-  updates.clear();
   total.clear();
-}
-
-const std::string *Path::fid(){
-  return fid_;
-}
-
-void Path::set_port(Module* port){
-  port_ = port;
 }
 
 void Path::appendRule(Module *module, HeadAction *head, StateAction state){
@@ -44,14 +48,17 @@ void Path::appendRule(Module *module, HeadAction *head, StateAction state){
 }
 
 void Path::handlePkt(bess::Packet *pkt){
-  
+  bess::PacketBatch unit;
+  unit.clear();
+  unit.add(pkt, this);
+ 
   static uint64_t tot = 0, sum = 0;
   uint64_t start = rte_get_timer_cycles();
   start = rte_get_timer_cycles();
   
   for(unsigned i = 0; i < modules.size(); ++i)
     if(states[i].action != nullptr && states[i].action(pkt, states[i].arg)){
-      Module trigger = modules[i];
+      Module *trigger = modules[i];
       
       total.clear();  
       for(unsigned j = 0; j < i; ++j)
@@ -64,10 +71,7 @@ void Path::handlePkt(bess::Packet *pkt){
       heads.erase(heads.begin() + i, heads.end());
       states.erase(states.begin() + i, states.end());
      
-      bess::PacketBatch unit;
-      unit.clear();
-      unit.add(pkt, this);
-      module->ProcessBatch(unit);
+      trigger->ProcessBatch(&unit);
       return;
     }
   
@@ -78,7 +82,7 @@ void Path::handlePkt(bess::Packet *pkt){
   handleHead(pkt);
   
   if(port_ != nullptr)
-    port_->ProcessBatch(unit);
+    port_->ProcessBatch(&unit);
   else
     bess::Packet::Free(pkt);
 }

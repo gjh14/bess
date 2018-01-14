@@ -12,7 +12,14 @@ const Commands Maglev::cmds = {
      Command::Command::THREAD_UNSAFE},
     {"clear", "EmptyArg", MODULE_CMD_FUNC(&Maglev::CommandClear),
      Command::Command::THREAD_UNSAFE}};
-     
+
+Maglev::Maglev() : Module() {
+  func = [&](bess::Packet *pkt[[maybe_unused]], void *arg) ->bool {
+      MaglevArg *check = (MaglevArg*) arg;
+      return hash_table[check->value] != check->gate;
+    };
+}
+
 CommandResponse Maglev::Init(const bess::pb::MaglevArg &arg){
   size = arg.size();
   for (const auto &dst : arg.dsts()) {
@@ -125,20 +132,15 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
         sum += end - start;
         LOG(INFO) << end - start << " " << ++tot << " " << sum;
       }
-      out_batch.add(pkt, batch);
+      out_batch.add(pkt, path);
     }
     
     StateAction state;
     state.type = StateAction::UNRELATE;
-    state.action = 
-      [&](bess::Packet *pkt[[maybe_unused]], void *arg) ->bool {
-        MaglevArg *check = (MaglevArg*) arg;
-        return hash_table[check->value] != check->gate;
-      };
-    
-    MaglevArg arg = new MaglevArg();
-    arg.value = value
-    arg.gate = gate;
+    state.action = func; 
+    MaglevArg *arg = (MaglevArg *)malloc(sizeof(MaglevArg));
+    arg->value = value;
+    arg->gate = gate;
     state.arg = (void*)arg;
     
     if(path != nullptr)

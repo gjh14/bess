@@ -370,7 +370,7 @@ void Module::RunSplit(const gate_idx_t *out_gates,
       num_pending++;
     }
 
-    batch->add(*(p_pkt++), mixed_batch->path[i]);
+    batch->add(*(p_pkt++), mixed_batch->path(i));
   }
 
   // phase 2: clear splits, since it may be reentrant.

@@ -10,8 +10,6 @@ class MAT {
  public:
   static const uint32_t MAX_PATHS = 999983;
   
-  MAT();
-  ~MAT();
   bool checkMAT(bess::Packet *pkt, Path *&path);
   void runMAT(bess::PacketBatch *batch);
 

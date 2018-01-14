@@ -39,6 +39,15 @@ const Commands ACL::cmds = {
     {"clear", "EmptyArg", MODULE_CMD_FUNC(&ACL::CommandClear),
      Command::Command::THREAD_UNSAFE}};
 
+ACL::ACL() : Module() {
+  max_allowed_workers_ = Worker::kMaxWorkers;
+  time = 0;
+  func = [&](bess::Packet *pkt[[maybe_unused]], void *arg) ->bool {
+      ACLArg *check = (ACLArg*)arg;
+      return *check != time;
+    };
+}
+
 CommandResponse ACL::Init(const bess::pb::ACLArg &arg) {
   for (const auto &rule : arg.rules()) {
     ACLRule new_rule = {
@@ -94,14 +103,10 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
     }
     
     HeadAction *head = new HeadAction();
+    StateAction state;
     state.type = StateAction::UNRELATE;
-    state.action =
-      [&](bess::Packet *pkt[[maybe_unused]], void *arg) ->bool {
-        ACLArg *check = (ACLArg*)arg;
-        return *check != time;
-      };
-    
-    ACLArg *arg = new ACLArg();
+    state.action = func;
+    ACLArg *arg = (ACLArg *)malloc(sizeof(ACLArg));
     *arg = time;
     state.arg = (void *)arg;
     

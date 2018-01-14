@@ -6,15 +6,6 @@
 #include "utils/tcp.h"
 #include "utils/udp.h"
 
-MAT::MAT(){
-  // mat.clear();
-}
-
-MAT::~MAT() {
-  // for(auto it : mat)
-    // delete it.second;
-}
-
 void MAT::appendData(std::string &fid, uint64_t &hash, uint32_t num, int len){
   hash = ((hash << (len << 3)) | num) % MAX_PATHS;
   for (int i = 0; i < len; ++i){
@@ -44,7 +35,6 @@ bool MAT::checkMAT(bess::Packet *pkt, Path *&path){
   path = paths + hash;
   if(paths[hash].fid() != nullptr && *paths[hash].fid() == *fid){
     delete fid;
-    paths[hash].handlePkt(unit);
     return true;
   }
   paths[hash].set_fid(fid);
@@ -56,4 +46,4 @@ void MAT::runMAT(bess::PacketBatch *batch){
   for(int i = 0; i < cnt; ++i)
     batch->path(i)->handlePkt(batch->pkts()[i]);
 }
-s
+

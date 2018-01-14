@@ -58,10 +58,7 @@ class ACL final : public Module {
 
   static const Commands cmds;
 
-  ACL() : Module() { 
-    max_allowed_workers_ = Worker::kMaxWorkers;
-    time = 0;
-  }
+  ACL();
    
   CommandResponse Init(const bess::pb::ACLArg &arg);
 
@@ -72,7 +69,8 @@ class ACL final : public Module {
 
  private:
   typedef uint64_t ACLArg;
-  ACLArg time = 0;
+  ACLArg time;
+  StateAction::FUNC func;
   
   std::vector<ACLRule> rules_;
 
