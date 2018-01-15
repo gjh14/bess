@@ -59,6 +59,8 @@ struct StateAction{
 
 class Path {
  public:
+  friend class MAT;
+  
   Path() : fid_(nullptr), port_(nullptr) {}
   ~Path();
 

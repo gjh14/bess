@@ -185,6 +185,8 @@ static void init_eal(const char *prog_name[[maybe_unused]], int mb_per_socket[[m
     LOG(ERROR) << "rte_eal_init() failed: ret = " << ret;
     exit(EXIT_FAILURE);
   }
+  
+  Parallel::init();
   LOG(INFO) << "Cycle: " << rte_get_timer_hz();
 
   enable_syslog();
@@ -228,7 +230,6 @@ void init_dpdk(const ::std::string &prog_name, int mb_per_socket,
   int default_core = determine_default_core();
   ctx.SetNonWorker();
 
-  LOG(INFO) << "SetNonWorker OK";
   init_eal(prog_name.c_str(), mb_per_socket, multi_instance, no_huge,
            default_core);
 }

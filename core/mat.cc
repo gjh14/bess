@@ -1,6 +1,8 @@
 #include "mat.h"
-#include "packet.h"
 
+#include <unordered_set>
+
+#include "packet.h"
 #include "utils/ether.h"
 #include "utils/ip.h"
 #include "utils/tcp.h"
@@ -28,7 +30,7 @@ void MAT::getFID(bess::Packet *pkt, std::string &fid, uint64_t &hash) {
   appendData(fid, hash, *dst_port, 2);
 }
 
-bool MAT::checkMAT(bess::Packet *pkt, Path *&path){
+bool MAT::checkMAT(bess::Packet *pkt, Path *&path) {
   std::string *fid = new std::string();
   uint64_t hash = 0;
   getFID(pkt, *fid, hash);
@@ -41,9 +43,57 @@ bool MAT::checkMAT(bess::Packet *pkt, Path *&path){
   return false;
 }
 
-void MAT::runMAT(bess::PacketBatch *batch){
-  int cnt = batch->cnt();
+void MAT::runMAT(bess::PacketBatch *batch) {
+  int first[bess::PacketBatch::kMaxBurst];
+  int cnt  = batch->cnt();
+  unordered_set<Port *> modules;
+  for(int i = 0; i < cnt; ++i){
+    bess::Packet *pkt = batch->pkts()[i];
+    Path *path = batch->path(i);
+    first[i] = -1;
+    for(unsigned j = 0; j < path->modules.size(); ++j) {
+      modules.insert(path->modules[j]);
+      path->modules[j]->parallel.append(i, j, pkt, path->actions[j]);
+    }
+  }
+  
+  for(Modules* module : modules)
+    module->parallel.start();
+  
+  for(Modules* module : modules){
+    Parallel parallel = &module->parallel;
+    while(parallel->finish());
+    for(int i = 0; i < parallel->cnt(); ++i)
+      if(parallel->result(i))
+        first[parallel->rank(i)] = parallel->pos(i);
+  }
+  
+  bess:PacketBatch left;
+  left.clear();
+  bess:PacketBatch unit;
+  for(int i = 0; i < cnt; ++i){
+    bess::Packet *pkt = batch->pkts()[i];
+    Path *path = batch->path(i);
+    if(first[i] >= 0){
+      unit.clear();
+      unit.add(pkt, path);
+      path->rehandle(pkt);
+    }
+    else
+      left.add(pkt, path);
+  }
+
+  unordered_set<Port *> ports;
+  cnt = left.cnt();
   for(int i = 0; i < cnt; ++i)
-    batch->path(i)->handlePkt(batch->pkts()[i]);
+    ports.insert(left.path(i)->port());
+  bess:PacketBatch* send;  
+  for(Port *port : ports){
+    send.clear();
+    for(int i = 0; i < cnt; ++i)
+      if(left.path(i) == port)
+       send.add(left.pkts()[i], nullptr);
+    port->ProcessBatch(send);
+  }
 }
 
