@@ -77,7 +77,7 @@ void MAT::runMAT(bess::PacketBatch *batch) {
     if(first[i] >= 0){
       unit.clear();
       unit.add(pkt, path);
-      path->rehandle(pkt);
+      path->rehandle(i, unit);
     }
     else
       left.add(pkt, path);

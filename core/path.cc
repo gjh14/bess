@@ -57,23 +57,8 @@ void Path::handlePkt(bess::Packet *pkt){
   start = rte_get_timer_cycles();
   
   for(unsigned i = 0; i < modules.size(); ++i)
-    if(states[i].action != nullptr && states[i].action(pkt, states[i].arg)){
-      Module *trigger = modules[i];
-      
-      total.clear();  
-      for(unsigned j = 0; j < i; ++j)
-        total.merge(heads[j]);
-      for(unsigned j = i; j < heads.size(); ++j)
-        delete heads[j];
-      handleHead(pkt);
-      
-      modules.erase(modules.begin() + i, modules.end());
-      heads.erase(heads.begin() + i, heads.end());
-      states.erase(states.begin() + i, states.end());
-     
-      trigger->ProcessBatch(&unit);
-      return;
-    }
+    if(states[i].action != nullptr && states[i].action(pkt, states[i].arg))
+      rehandle(i, &unit);
   
   uint64_t end = rte_get_timer_cycles();
   sum += end - start;
@@ -85,6 +70,23 @@ void Path::handlePkt(bess::Packet *pkt){
     port_->ProcessBatch(&unit);
   else
     bess::Packet::Free(pkt);
+}
+
+void Path::rehandle(int pos, bess::PacketBatch *unit) {
+  Module *trigger = modules[pos];    
+  
+  total.clear();
+  for(unsigned i = 0; i < pos; ++i)
+    total.merge(heads[j]);
+  for(unsigned i = pos; i < heads.size(); ++i)
+    delete heads[j];
+  handleHead(pkt);
+
+  modules.erase(modules.begin() + i, modules.end());
+  heads.erase(heads.begin() + i, heads.end());
+  states.erase(states.begin() + i, states.end());
+
+  trigger->ProcessBatch(&unit);
 }
 
 void Path::handleHead(bess::Packet *pkt){
