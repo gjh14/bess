@@ -70,7 +70,7 @@ class ACL final : public Module {
  private:
   typedef uint64_t ACLArg;
   ACLArg time;
-  StateAction::FUNC func;
+  StateAction::FUNC sfunc;
   
   std::vector<ACLRule> rules_;
 

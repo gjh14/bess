@@ -32,7 +32,7 @@ class Maglev final: public Module {
     uint32_t value;
     uint32_t gate;
   };
-  StateAction::FUNC func;
+  StateAction::FUNC sfunc;
  
   uint32_t size;
   uint32_t ndsts;

@@ -45,6 +45,7 @@
 #include <cstring>
 #include <string>
 
+#include "parallel.h"
 #include "utils/time.h"
 #include "worker.h"
 
@@ -133,8 +134,8 @@ static void init_eal(const char *prog_name[[maybe_unused]], int mb_per_socket[[m
   int numa_count[[maybe_unused]] = get_numa_count();
  
   CmdLineOpts rte_args{
-      prog_name, "--master-lcore", std::to_string(RTE_MAX_LCORE - 1), "--lcore",
-      std::to_string(RTE_MAX_LCORE - 1) + "@" + std::to_string(default_core),
+      prog_name, // "--master-lcore", std::to_string(RTE_MAX_LCORE - 1), "--lcore",
+      // std::to_string(RTE_MAX_LCORE - 1) + "@" + std::to_string(default_core),
       // Do not bother with /var/run/.rte_config and .rte_hugepage_info,
       // since we don't want to interfere with other DPDK applications.
       "--no-shconf", "-b", "01:00.1",  "-b", "02:00.0", "-b", "02:00.1", "-b" ,"03:00.1", };

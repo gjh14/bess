@@ -341,10 +341,6 @@ inline void NAT::DoProcessBatch(bess::PacketBatch *batch) {
     Path *path = batch->path(i);
     
     HeadAction* head = new HeadAction();
-    StateAction state;
-    state.type = StateAction::UNRELATE;
-    state.action = nullptr;
-    state.arg = nullptr;
 
     Ethernet *eth = pkt->head_data<Ethernet *>();
     Ipv4 *ip = reinterpret_cast<Ipv4 *>(eth + 1);
@@ -358,7 +354,7 @@ inline void NAT::DoProcessBatch(bess::PacketBatch *batch) {
     if (!valid_protocol) {
       head->type = HeadAction::DROP;
       if(path != nullptr)
-        path->appendRule(this, head, state);
+        path->appendRule(this, head, nullptr);
       free_batch.add(pkt, nullptr);
       continue;
     }
@@ -368,7 +364,7 @@ inline void NAT::DoProcessBatch(bess::PacketBatch *batch) {
     if (hash_item == nullptr) {
       if (dir != kForward || !(hash_item = CreateNewEntry(before, now))) {
         head->type = HeadAction::DROP;
-        path->appendRule(this, head, state);
+        path->appendRule(this, head, nullptr);
         free_batch.add(pkt, nullptr);
         continue;
       }
@@ -383,7 +379,7 @@ inline void NAT::DoProcessBatch(bess::PacketBatch *batch) {
     
     out_batch.add(pkt, path);
     if(path != nullptr)
-      path->appendRule(this, head, state);
+      path->appendRule(this, head, nullptr);
   }
 
   bess::Packet::Free(&free_batch);

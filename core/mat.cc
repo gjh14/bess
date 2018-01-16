@@ -2,6 +2,7 @@
 
 #include <unordered_set>
 
+#include "module.h"
 #include "packet.h"
 #include "utils/ether.h"
 #include "utils/ip.h"
@@ -44,56 +45,60 @@ bool MAT::checkMAT(bess::Packet *pkt, Path *&path) {
 }
 
 void MAT::runMAT(bess::PacketBatch *batch) {
-  int first[bess::PacketBatch::kMaxBurst];
   int cnt  = batch->cnt();
-  unordered_set<Port *> modules;
+/*
+  for(int i = 0; i < cnt; ++i)
+    batch->path(i)->handlePkt(batch->pkts()[i]);
+*/
+  int first[bess::PacketBatch::kMaxBurst];
+  std::unordered_set<Module *> modules;
   for(int i = 0; i < cnt; ++i){
     bess::Packet *pkt = batch->pkts()[i];
     Path *path = batch->path(i);
     first[i] = -1;
     for(unsigned j = 0; j < path->modules.size(); ++j) {
       modules.insert(path->modules[j]);
-      path->modules[j]->parallel.append(i, j, pkt, path->actions[j]);
+      path->modules[j]->parallel()->append(i, j, pkt, path->states[j]);
     }
   }
   
-  for(Modules* module : modules)
-    module->parallel.start();
+  for(Module *module : modules)
+    module->parallel()->start();
   
-  for(Modules* module : modules){
-    Parallel parallel = &module->parallel;
-    while(parallel->finish());
+  for(Module* module : modules){
+    Parallel *parallel = module->parallel();
+    parallel->join();
     for(int i = 0; i < parallel->cnt(); ++i)
       if(parallel->result(i))
         first[parallel->rank(i)] = parallel->pos(i);
   }
   
-  bess:PacketBatch left;
+  bess::PacketBatch left;
   left.clear();
-  bess:PacketBatch unit;
+  bess::PacketBatch unit;
   for(int i = 0; i < cnt; ++i){
     bess::Packet *pkt = batch->pkts()[i];
     Path *path = batch->path(i);
     if(first[i] >= 0){
       unit.clear();
       unit.add(pkt, path);
-      path->rehandle(i, unit);
+      path->rehandle(i, &unit);
     }
     else
       left.add(pkt, path);
   }
 
-  unordered_set<Port *> ports;
+  std::unordered_set<Module *> ports;
   cnt = left.cnt();
   for(int i = 0; i < cnt; ++i)
     ports.insert(left.path(i)->port());
-  bess:PacketBatch* send;  
-  for(Port *port : ports){
+  bess::PacketBatch send;
+  for(Module *port : ports){
     send.clear();
     for(int i = 0; i < cnt; ++i)
-      if(left.path(i) == port)
+      if(left.path(i)->port() == port)
        send.add(left.pkts()[i], nullptr);
-    port->ProcessBatch(send);
+    port->ProcessBatch(&send);
   }
 }
 

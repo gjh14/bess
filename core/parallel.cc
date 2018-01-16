@@ -1,23 +1,37 @@
-#include "paralell.h"
+#include "parallel.h"
 
-#include <rte_ring.h>
+#include <cstring>
+#include <rte_eal.h>
+#include <rte_launch.h>
+#include <rte_lcore.h>
+#include <rte_memory.h>
+#include <rte_per_lcore.h>
 
 #include "packet.h"
 
+Parallel::Parallel() : remote_(false), run_(false),  cnt_(0) {}
 
-Parallel::Parallel() : cnt_(0), start(false), end(false) {
-  for(lcore_id = 0; core[lcore_id]; ++lcore_id);
+Parallel::~Parallel() {
+  if(remote_) {
+    remote_ = false;
+    rte_eal_wait_lcore(lcore_id);
+    core[lcore_id] = 0;
+  }
+}
+
+void Parallel::remote(){
+  RTE_LCORE_FOREACH_SLAVE(lcore_id){
+    LOG(INFO) << "lcore " << lcore_id;
+  }
+  
+  remote_ = true;
+  for (lcore_id = 0; core[lcore_id]; ++lcore_id);
   core[lcore_id] = 1;
+  LOG(INFO) << "used " << lcore_id;
   rte_eal_remote_launch(act, this, lcore_id);
-}
+} 
 
-~Parallel() {
- end = true;
- rte_eal_wait_lcore(lcore_id);
- core[lcore_id] = 0;
-}
-
-void Parallel::append(int rank, int pos, bess::Packet *pkt, StateAction state){
+void Parallel::append(int rank, int pos, bess::Packet *pkt, StateAction *state){
   ranks_[cnt_] = rank;
   poss_[cnt_] = pos;
   pkts_[cnt_] = pkt;
@@ -25,31 +39,41 @@ void Parallel::append(int rank, int pos, bess::Packet *pkt, StateAction state){
 }
 
 void Parallel::start(){
-  finish = false;
-  start = true;
+  if(run_){
+     run_ = true;
+     return;
+  }
+
+  for(int i = 0; i < cnt_; ++i)
+    if(states_[i] != nullptr)
+      results_[i] = states_[i]->action(pkts_[i], states_[i]->arg);
 }
 
-bool Paralell:finish(){
-  return finish;
+void Parallel::join(){
+  while(run_);
+  cnt_ = 0;
 }
 
-static int Parallel::act(void *arg){
-  Parallel *run = (Parallel *)arg;
-  int lcore_id = rte_lcore_id();
+int Parallel::act(void *arg){
+  Parallel *master = (Parallel *)arg;
+  // int lcore_id = rte_lcore_id();
   while(1){
-    if(run->start){
-      int cnt = run->cnt_;
+    if(master->run_) {
+      int cnt = master->cnt_;
       for(int i = 0; i < cnt; ++i)
-        run->result[i] = run->states_[i].action(run->pkts_[i], run->states_[i].arg);
-      run->finish = true;
+        if(master->states_[i] != nullptr)
+          master->results_[i] = master->states_[i]->action(master->pkts_[i], master->states_[i]->arg);
+      master->run_ = true;
     }
-    if(run->end)
+    if(!master->remote_)
       break;
   }
   return 0;
 }
 
-static Parallel::init(){
+bool Parallel::core[RTE_MAX_LCORE + 1];
+
+void Parallel::init(){
   memset(core, 0, sizeof(core));
   core[rte_lcore_id()] = 1; 
 }

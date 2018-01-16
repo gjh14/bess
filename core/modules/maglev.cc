@@ -14,7 +14,7 @@ const Commands Maglev::cmds = {
      Command::Command::THREAD_UNSAFE}};
 
 Maglev::Maglev() : Module() {
-  func = [&](bess::Packet *pkt[[maybe_unused]], void *arg) ->bool {
+  sfunc = [&](bess::Packet *pkt[[maybe_unused]], void *arg) ->bool {
       MaglevArg *check = (MaglevArg*) arg;
       return hash_table[check->value] != check->gate;
     };
@@ -135,13 +135,13 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
       out_batch.add(pkt, path);
     }
     
-    StateAction state;
-    state.type = StateAction::UNRELATE;
-    state.action = func; 
+    StateAction *state = new StateAction();
+    state->type = StateAction::UNRELATE;
+    state->action = sfunc; 
     MaglevArg *arg = (MaglevArg *)malloc(sizeof(MaglevArg));
     arg->value = value;
     arg->gate = gate;
-    state.arg = (void*)arg;
+    state->arg = (void*)arg;
     
     if(path != nullptr)
       path->appendRule(this, head, state);

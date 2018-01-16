@@ -64,7 +64,7 @@ class Path {
   Path() : fid_(nullptr), port_(nullptr) {}
   ~Path();
 
-  void appendRule(Module *module, HeadAction *head, StateAction state);
+  void appendRule(Module *module, HeadAction *head, StateAction *state);
   void handlePkt(bess::Packet *pkt);
   void rehandle(int pos, bess::PacketBatch *unit);
   
@@ -81,7 +81,7 @@ class Path {
   HeadAction total;
   
   std::vector<Module *> modules;
-  std::vector<StateAction> states;
+  std::vector<StateAction *> states;
   
   void handleHead(bess::Packet *pkt);
 };

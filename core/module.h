@@ -45,6 +45,7 @@
 #include "message.h"
 #include "metadata.h"
 #include "packet.h"
+#include "parallel.h"
 #include "scheduler.h"
 
 using bess::gate_idx_t;
@@ -365,6 +366,7 @@ class alignas(64) Module {
     overload_ = false;
   }
 
+  Parallel *parallel() { return &parallel_; }
  private:
   // Module Destory, connect, task managements are only available with
   // ModuleGraph class
@@ -404,7 +406,9 @@ class alignas(64) Module {
 
   std::vector<bess::IGate *> igates_;
   std::vector<bess::OGate *> ogates_;
-  
+   
+  Parallel parallel_;
+ 
  protected:
   // Set of active workers accessing this module.
   std::vector<bool> active_workers_;

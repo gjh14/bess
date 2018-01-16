@@ -27,8 +27,10 @@ void HeadAction::merge(HeadAction *action) {
 }
 
 Path::~Path(){
-  for(auto head : heads)
+  for (auto head : heads)
     delete head;
+  for (auto state : states)
+    delete state;
   delete fid_;
 }
 
@@ -40,7 +42,7 @@ void Path::set_fid(std::string *fid){
   total.clear();
 }
 
-void Path::appendRule(Module *module, HeadAction *head, StateAction state){
+void Path::appendRule(Module *module, HeadAction *head, StateAction *state){
   modules.push_back(module);
   heads.push_back(head);
   states.push_back(state);
@@ -57,7 +59,7 @@ void Path::handlePkt(bess::Packet *pkt){
   start = rte_get_timer_cycles();
   
   for(unsigned i = 0; i < modules.size(); ++i)
-    if(states[i].action != nullptr && states[i].action(pkt, states[i].arg))
+    if(states[i]!= nullptr && states[i]->action(pkt, states[i]->arg))
       rehandle(i, &unit);
   
   uint64_t end = rte_get_timer_cycles();
@@ -73,20 +75,23 @@ void Path::handlePkt(bess::Packet *pkt){
 }
 
 void Path::rehandle(int pos, bess::PacketBatch *unit) {
-  Module *trigger = modules[pos];    
+  Module *trigger = modules[pos];
   
   total.clear();
-  for(unsigned i = 0; i < pos; ++i)
-    total.merge(heads[j]);
-  for(unsigned i = pos; i < heads.size(); ++i)
-    delete heads[j];
-  handleHead(pkt);
+  for(int i = 0; i < pos; ++i)
+    total.merge(heads[i]);
+  handleHead(unit->pkts()[0]);
 
-  modules.erase(modules.begin() + i, modules.end());
-  heads.erase(heads.begin() + i, heads.end());
-  states.erase(states.begin() + i, states.end());
+  for(int i = pos; i < (int)modules.size(); ++i){
+    delete heads[i];
+    delete states[i];
+  }
 
-  trigger->ProcessBatch(&unit);
+  modules.erase(modules.begin() + pos, modules.end());
+  heads.erase(heads.begin() + pos, heads.end());
+  states.erase(states.begin() + pos, states.end());
+
+  trigger->ProcessBatch(unit);
 }
 
 void Path::handleHead(bess::Packet *pkt){

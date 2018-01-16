@@ -42,7 +42,7 @@ const Commands ACL::cmds = {
 ACL::ACL() : Module() {
   max_allowed_workers_ = Worker::kMaxWorkers;
   time = 0;
-  func = [&](bess::Packet *pkt[[maybe_unused]], void *arg) ->bool {
+  sfunc = [&](bess::Packet *pkt[[maybe_unused]], void *arg) ->bool {
       ACLArg *check = (ACLArg*)arg;
       return *check != time;
     };
@@ -103,12 +103,12 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
     }
     
     HeadAction *head = new HeadAction();
-    StateAction state;
-    state.type = StateAction::UNRELATE;
-    state.action = func;
+    StateAction *state = new StateAction();
+    state->type = StateAction::UNRELATE;
+    state->action = sfunc;
     ACLArg *arg = (ACLArg *)malloc(sizeof(ACLArg));
     *arg = time;
-    state.arg = (void *)arg;
+    state->arg = (void *)arg;
     
     if(out_gates[i] == DROP_GATE)
       head->type = HeadAction::DROP;
