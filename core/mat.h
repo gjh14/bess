@@ -23,9 +23,7 @@ class MAT {
   Path paths[MAX_PATHS];
   std::vector<Module *> modules;
   std::vector<Module *> ports;
-  
-  void appendData(std::string &fid, uint64_t &hash, uint32_t num, int len);
-  void getFID(bess::Packet *pkt, std::string &fid, uint64_t &hash);  
 };
 
 #endif
+

@@ -29,6 +29,8 @@
 
 #include "acl.h"
 
+#include <rte_cycles.h>
+
 #include "../utils/ether.h"
 #include "../utils/ip.h"
 #include "../utils/udp.h"
@@ -85,6 +87,9 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
   for (int i = 0; i < cnt; i++) {
     bess::Packet *pkt = batch->pkts()[i];
     Path *path = batch->path(i);
+    
+    static uint64_t tot = 0, sum = 0;
+    uint64_t start = rte_get_timer_cycles();
 
     Ethernet *eth = pkt->head_data<Ethernet *>();
     Ipv4 *ip = reinterpret_cast<Ipv4 *>(eth + 1);
@@ -93,7 +98,7 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
         reinterpret_cast<Udp *>(reinterpret_cast<uint8_t *>(ip) + ip_bytes);
 
     out_gates[i] = DROP_GATE;  // By default, drop unmatched packets
-
+    
     for (const auto &rule : rules_) {
       if (rule.Match(ip->src, ip->dst, udp->src_port, udp->dst_port)) {
         if (!rule.drop) {
@@ -102,7 +107,7 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
         break;  // Stop matching other rules
       }
     }
-   
+
     if (path == nullptr) {
       HeadAction *head = nullptr;
       StateAction *state = nullptr;
@@ -115,6 +120,10 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
       *arg = time;
       state->arg = (void *)arg;
     }
+
+    uint64_t end = rte_get_timer_cycles();
+    sum += end - start;
+    LOG(INFO) << end - start << " " << ++tot << " " << sum;
   }
   RunSplit(out_gates, batch);
 }

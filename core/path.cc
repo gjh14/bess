@@ -1,13 +1,11 @@
 #include "path.h"
 
+#include <cstring>
 #include <rte_cycles.h>
 
 #include "mat.h"
 #include "module.h"
 #include "packet.h"
-#include "utils/ether.h"
-#include "utils/ip.h"
-#include "utils/udp.h"
 
 void HeadAction::modify(uint32_t _pos, uint32_t _value) {
   if(type == DROP)
@@ -40,7 +38,7 @@ Path::~Path(){
     free(states[i].arg);
 }
 
-void Path::set_fid(const std::string &fid){
+void Path::set_fid(const FID &fid) {
   fid_ = fid;
   clear();
 }
@@ -76,7 +74,6 @@ void Path::handlePkt(bess::Packet *pkt){
  
   static uint64_t tot = 0, sum = 0;
   uint64_t start = rte_get_timer_cycles();
-  start = rte_get_timer_cycles();
   /* 
   for(int i = 0; i < cnt_; ++i)
     if(states[i].action!= nullptr && states[i].action(pkt, states[i].arg))

@@ -30,6 +30,7 @@
 #ifndef BESS_MODULES_ACL_H_
 #define BESS_MODULES_ACL_H_
 
+#include <map>
 #include <vector>
 
 #include "../module.h"
@@ -73,7 +74,6 @@ class ACL final : public Module {
   StateAction::FUNC sfunc;
   
   std::vector<ACLRule> rules_;
-
 };
 
 #endif  // BESS_MODULES_ACL_H_
