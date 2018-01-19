@@ -1,5 +1,4 @@
-#include "maglev.h"
-
+#include "maglev.h" 
 #include <algorithm>
 #include <rte_cycles.h>
 
@@ -104,6 +103,14 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
     bess::Packet *pkt = batch->pkts()[i];
     Path *path = batch->path(i);
 
+    static uint64_t tot = 0, sum = 0;
+    uint64_t start = rte_get_timer_cycles();
+
+    HeadAction *head = nullptr;
+    StateAction *state = nullptr;
+    if (path != nullptr)
+      path->appendRule(this, head, state);
+
     uint8_t *protocol = (uint8_t *)pkt + 535;
     uint32_t *src_ip = (uint32_t *)((uint8_t *)pkt + 538);
     uint16_t *src_port = (uint16_t *)((uint8_t *) pkt + 546);
@@ -113,38 +120,34 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
     uint32_t value = hash(*protocol, *src_ip, *src_port, *dst_ip, *dst_port);
     uint32_t gate = hash_table[value];
       
-    HeadAction *head = new HeadAction();
-    if(gate == ndsts){
-      head->type = HeadAction::DROP;
+    if (gate == ndsts) {
+      if (head != nullptr)
+        head->type = HeadAction::DROP;
       free_batch.add(pkt, nullptr);
-    }else{
-      static uint64_t tot = 0, sum = 0;
-      uint64_t start = rte_get_timer_cycles();
-      start = rte_get_timer_cycles();
-      
+    } else {
       *dst_ip = dsts[gate].dst_ip;
       *dst_port = dsts[gate].dst_port;
-      head->modify(HeadAction::DST_IP, dsts[gate].dst_ip);
-      head->modify(HeadAction::DST_PORT, dsts[gate].dst_port);
-      
-      uint64_t end = rte_get_timer_cycles();
-      if(end - start < 50){
-        sum += end - start;
-        LOG(INFO) << end - start << " " << ++tot << " " << sum;
+      if (head != nullptr) {
+        head->modify(HeadAction::DST_IP, dsts[gate].dst_ip);
+        head->modify(HeadAction::DST_PORT, dsts[gate].dst_port); 
       }
       out_batch.add(pkt, path);
     }
-    
-    StateAction *state = new StateAction();
-    state->type = StateAction::UNRELATE;
-    state->action = sfunc; 
-    MaglevArg *arg = (MaglevArg *)malloc(sizeof(MaglevArg));
-    arg->value = value;
-    arg->gate = gate;
-    state->arg = (void*)arg;
-    
-    if(path != nullptr)
-      path->appendRule(this, head, state);
+    /*
+    if (state != nullptr) {
+      MaglevArg *arg = (MaglevArg *)malloc(sizeof(MaglevArg));
+      state->type = StateAction::UNRELATE;
+      state->action = sfunc; 
+      arg->value = value;
+      arg->gate = gate;
+      state->arg = (void*)arg;
+    }
+    */
+    int delay = i;
+    for(int j = 0; j < 200; ++j) delay *= i | 1;
+    uint64_t end = rte_get_timer_cycles();
+    sum += end - start;
+    LOG(INFO) << end - start << " " << ++tot << " " << sum << " " << delay;
   }
 
   bess::Packet::Free(&free_batch);

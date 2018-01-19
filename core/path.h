@@ -12,6 +12,7 @@ class Packet;
 class PacketBatch;
 }
 
+class MAT;
 class Module;
 
 struct HeadAction {
@@ -24,9 +25,7 @@ struct HeadAction {
   uint32_t mask[POSNUM];
   uint32_t value[POSNUM];
   
-  HeadAction() {
-    clear();
-  }
+  HeadAction() { clear(); }
   
   void clear() {
     type = 0;
@@ -34,14 +33,7 @@ struct HeadAction {
     memset(value, 0, sizeof(value)); 
   }
   
-  void modify(uint32_t _pos, uint32_t _value) {
-   if(type == DROP)
-      return;
-    type |= MODIFY;
-    mask[_pos] = 0;
-    value[_pos] = _value;
-  }
-  
+  void modify(uint32_t _pos, uint32_t _value);
   void merge(HeadAction *action);
 };
 
@@ -49,7 +41,7 @@ struct StateAction{
   typedef enum {READ, WRITE, UNRELATE} TYPE;
   typedef std::function<bool(bess::Packet *pkt, void *arg)> FUNC;
   
-  StateAction() : arg(nullptr) {}
+  StateAction() : action(nullptr), arg(nullptr) {}
   ~StateAction() { free(arg); }
  
   TYPE type;
@@ -60,29 +52,34 @@ struct StateAction{
 class Path {
  public:
   friend class MAT;
+   
+  static const int MAXLEN = 8;
   
-  Path() : fid_(nullptr), port_(nullptr) {}
+  Path() : port_(nullptr), cnt_(0) {}
   ~Path();
 
-  void appendRule(Module *module, HeadAction *head, StateAction *state);
+  void appendRule(Module *module, HeadAction *&head, StateAction *&state);
+  void clear();
+
   void handlePkt(bess::Packet *pkt);
   void rehandle(int pos, bess::PacketBatch *unit);
   
-  void set_port(Module *port) { port_ = port; }
+  void set_port(Module *port);
   Module* port() { return port_; }
-  void set_fid(std::string *fid);
-  const std::string *fid() { return fid_; }
+  void set_fid(const std::string &fid);
+  const std::string &fid() { return fid_; }
   
  private:
-  std::string *fid_;
+  MAT *mat;
+  std::string fid_;
   Module *port_;
   
-  std::vector<HeadAction *> heads;
+  int cnt_;
+  Module *modules[MAXLEN];
+  HeadAction heads[MAXLEN];
+  StateAction states[MAXLEN];
   HeadAction total;
-  
-  std::vector<Module *> modules;
-  std::vector<StateAction *> states;
-  
+
   void handleHead(bess::Packet *pkt);
 };
 

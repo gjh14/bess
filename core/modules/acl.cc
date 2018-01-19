@@ -84,6 +84,7 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
   int cnt = batch->cnt();
   for (int i = 0; i < cnt; i++) {
     bess::Packet *pkt = batch->pkts()[i];
+    Path *path = batch->path(i);
 
     Ethernet *eth = pkt->head_data<Ethernet *>();
     Ipv4 *ip = reinterpret_cast<Ipv4 *>(eth + 1);
@@ -101,18 +102,19 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
         break;  // Stop matching other rules
       }
     }
-    
-    HeadAction *head = new HeadAction();
-    StateAction *state = new StateAction();
-    state->type = StateAction::UNRELATE;
-    state->action = sfunc;
-    ACLArg *arg = (ACLArg *)malloc(sizeof(ACLArg));
-    *arg = time;
-    state->arg = (void *)arg;
-    
-    if(out_gates[i] == DROP_GATE)
-      head->type = HeadAction::DROP;
-    batch->path(i)->appendRule(this, head, state);
+   
+    if (path == nullptr) {
+      HeadAction *head = nullptr;
+      StateAction *state = nullptr;
+      path->appendRule(this, head, state);
+      if (out_gates[i] == DROP_GATE)
+        head->type = HeadAction::DROP;
+      state->type = StateAction::UNRELATE;
+      state->action = sfunc;
+      ACLArg *arg = (ACLArg *)malloc(sizeof(ACLArg));
+      *arg = time;
+      state->arg = (void *)arg;
+    }
   }
   RunSplit(out_gates, batch);
 }

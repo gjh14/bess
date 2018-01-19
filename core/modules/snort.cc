@@ -1295,7 +1295,6 @@ int Snort::CheckRules(Rule *list, NetData net)
    while(idx != NULL)
    {
 
-
       if(((unsigned int)idx->proto) != net.proto)
       {
 		//printf("idx->proto:%d\n",idx->proto);
@@ -1514,6 +1513,8 @@ Snort::Snort() : Module() {
       CheckRules(LogList, net);
       return false;
     };
+
+  // parallel()->remote();
 }
 
 Snort::~Snort(){
@@ -1563,6 +1564,7 @@ void Snort::ProcessBatch(bess::PacketBatch *batch){
   int cnt = batch->cnt();
   for (int i = 0; i < cnt; i++) {
     bess::Packet *pkt = batch->pkts()[i];
+    Path *path =  batch->path(i);
 /*
     static uint64_t tot = 0, sum = 0;
     uint64_t start = rte_get_timer_cycles();
@@ -1574,21 +1576,18 @@ void Snort::ProcessBatch(bess::PacketBatch *batch){
     CheckRules(AlertList, net);
     CheckRules(PassList, net);
     CheckRules(LogList, net);  
-/*
-    uint64_t end = rte_get_timer_cycles();
-    if(true){
-      sum += end - start;
-      LOG(INFO) << end - start << " " << ++tot << " " << sum;
+    if(path != nullptr){
+      HeadAction *head = nullptr;
+      StateAction *state = nullptr;
+      path->appendRule(this, head, state);
+      state->type = StateAction::READ;
+      state->action = sfunc;
+      state->arg = nullptr;
     }
-*/ 
-    HeadAction *head = nullptr;
-    StateAction *state = new StateAction();
-    state->type = StateAction::READ;
-    state->action = sfunc; 
-    state->arg = nullptr;
 
-    if(batch->path(i) != nullptr)
-      batch->path(i)->appendRule(this, head, state);
+    // uint64_t end = rte_get_timer_cycles();
+    // sum += end - start;
+    // LOG(INFO) << end - start << " " << ++tot << " " << sum;
   }
 
   RunNextModule(batch);

@@ -74,34 +74,40 @@ void Task::AddActiveWorker(int wid) const {
  * GMAT
  */
 void Task::collect(bess::PacketBatch *batch, Module *module) {
-//   module->RunNextModule(batch);
+  // module->RunNextModule(batch);
 
   bess::PacketBatch hits;
   hits.clear();
   bess::PacketBatch unhits;
   unhits.clear();
-  
-  std::unordered_set<const Path*> visited;
+ 
   int cnt = batch->cnt();
-  
+
   for (int i = 0; i < cnt; ++i) {
     bess::Packet *pkt = batch->pkts()[i];
     Path *path = nullptr;
     bool flag = gmat.checkMAT(pkt, path);
-    if(visited.count(path)){
-      gmat.runMAT(&hits);
-      module->RunNextModule(&unhits);
-      visited.clear();
-      hits.clear();
-      unhits.clear();
-    }
-    visited.insert(path);
+    for (int j = 0; j < hits.cnt(); ++j)
+      if (path == hits.path(j)){
+        gmat.runMAT(&hits);
+        hits.clear();
+      }
+    for (int j = 0; j < unhits.cnt(); ++j)
+      if (path == unhits.path(j)) {
+        module->RunNextModule(&unhits);
+        unhits.clear();
+      }
     if(flag)
       hits.add(pkt, path);
-    else
+    else{
       unhits.add(pkt, path);
+      path->clear();
+    }
   }
-  gmat.runMAT(&hits);
-  module->RunNextModule(&unhits);
+
+  if(hits.cnt())
+    gmat.runMAT(&hits);
+  if(unhits.cnt())
+    module->RunNextModule(&unhits);
 }
 

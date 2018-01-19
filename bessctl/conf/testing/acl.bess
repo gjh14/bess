@@ -1,0 +1,3 @@
+port::PMDPort(port_id = 0, num_inc_q = 1, num_out_q = 1)
+fw::ACL(rules=[{'src_ip': '172.12.0.0/16', 'drop': False}])
+PortInc(port = port) -> fw -> Sink()

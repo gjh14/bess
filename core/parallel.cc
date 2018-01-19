@@ -39,13 +39,15 @@ void Parallel::append(int rank, int pos, bess::Packet *pkt, StateAction *state){
 }
 
 void Parallel::start(){
-  if(run_){
+  if(remote_){
+     // std::atomic_thread_fence(std::memory_order_acquire);
      run_ = true;
+     // std::atomic_thread_fence(std::memory_order_release);
      return;
   }
 
   for(int i = 0; i < cnt_; ++i)
-    if(states_[i] != nullptr)
+    if(states_[i]->action != nullptr)
       results_[i] = states_[i]->action(pkts_[i], states_[i]->arg);
 }
 
@@ -60,10 +62,13 @@ int Parallel::act(void *arg){
   while(1){
     if(master->run_) {
       int cnt = master->cnt_;
+      LOG(INFO) << "Run " << cnt;
       for(int i = 0; i < cnt; ++i)
         if(master->states_[i] != nullptr)
           master->results_[i] = master->states_[i]->action(master->pkts_[i], master->states_[i]->arg);
-      master->run_ = true;
+      // std::atomic_thread_fence(std::memory_order_acquire);
+      master->run_ = false;
+      // std::atomic_thread_fence(std::memory_order_release);
     }
     if(!master->remote_)
       break;
@@ -77,4 +82,3 @@ void Parallel::init(){
   memset(core, 0, sizeof(core));
   core[rte_lcore_id()] = 1; 
 }
-

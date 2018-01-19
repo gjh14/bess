@@ -2,12 +2,21 @@
 
 #include <rte_cycles.h>
 
+#include "mat.h"
 #include "module.h"
 #include "packet.h"
 #include "utils/ether.h"
 #include "utils/ip.h"
 #include "utils/udp.h"
 
+void HeadAction::modify(uint32_t _pos, uint32_t _value) {
+  if(type == DROP)
+    return;
+  type |= MODIFY;
+  mask[_pos] = 0;
+  value[_pos] = _value;
+}
+  
 void HeadAction::merge(HeadAction *action) {
   if(action == nullptr || type == DROP)
     return;
@@ -27,26 +36,37 @@ void HeadAction::merge(HeadAction *action) {
 }
 
 Path::~Path(){
-  for (auto head : heads)
-    delete head;
-  for (auto state : states)
-    delete state;
-  delete fid_;
+  for(int i = 0; i < cnt_; ++i)
+    free(states[i].arg);
 }
 
-void Path::set_fid(std::string *fid){
-  delete fid_;
+void Path::set_fid(const std::string &fid){
   fid_ = fid;
-  heads.clear();
-  states.clear();
+  clear();
+}
+
+void Path::appendRule(Module *module, HeadAction *&head, StateAction *&state){
+  if(cnt_ >= MAXLEN)
+    LOG(ERROR) << "Exceed Max Length";
+  head = heads + cnt_;
+  state = states + cnt_;
+  modules[++cnt_] = module;
+  total.merge(head);
+  mat->add_module(module);
+}
+
+void Path::clear() {
+  for(int i = 0; i < cnt_; ++i){
+    heads[i].clear();
+    free(states[i].arg);
+  }
+  cnt_ = 0;
   total.clear();
 }
 
-void Path::appendRule(Module *module, HeadAction *head, StateAction *state){
-  modules.push_back(module);
-  heads.push_back(head);
-  states.push_back(state);
-  total.merge(head);
+void Path::set_port(Module *port) {
+  port_ = port;
+  mat->add_port(port);
 }
 
 void Path::handlePkt(bess::Packet *pkt){
@@ -57,17 +77,17 @@ void Path::handlePkt(bess::Packet *pkt){
   static uint64_t tot = 0, sum = 0;
   uint64_t start = rte_get_timer_cycles();
   start = rte_get_timer_cycles();
-  
-  for(unsigned i = 0; i < modules.size(); ++i)
-    if(states[i]!= nullptr && states[i]->action(pkt, states[i]->arg))
+  /* 
+  for(int i = 0; i < cnt_; ++i)
+    if(states[i].action!= nullptr && states[i].action(pkt, states[i].arg))
       rehandle(i, &unit);
-  
+  */
+  handleHead(pkt);
+
   uint64_t end = rte_get_timer_cycles();
   sum += end - start;
   LOG(INFO) << end - start << " " << ++tot << " " << sum;
 
-  handleHead(pkt);
-  
   if(port_ != nullptr)
     port_->ProcessBatch(&unit);
   else
@@ -79,26 +99,19 @@ void Path::rehandle(int pos, bess::PacketBatch *unit) {
   
   total.clear();
   for(int i = 0; i < pos; ++i)
-    total.merge(heads[i]);
+    total.merge(&heads[i]);
   handleHead(unit->pkts()[0]);
 
-  for(int i = pos; i < (int)modules.size(); ++i){
-    delete heads[i];
-    delete states[i];
+  for(int i = pos; i < cnt_; ++i){
+    heads[i].clear();
+    free(states[i].arg);
   }
-
-  modules.erase(modules.begin() + pos, modules.end());
-  heads.erase(heads.begin() + pos, heads.end());
-  states.erase(states.begin() + pos, states.end());
+  cnt_ = pos;
 
   trigger->ProcessBatch(unit);
 }
 
 void Path::handleHead(bess::Packet *pkt){
-  // static uint64_t tot = 0, sum = 0;
-  // uint64_t start = rte_get_timer_cycles();
-  // start = rte_get_timer_cycles();
-
   if(total.type & HeadAction::DROP){
     port_ = nullptr;
     return;
@@ -117,11 +130,4 @@ void Path::handleHead(bess::Packet *pkt){
   *dst_port = (*dst_port & total.mask[4]) | total.value[4];
 
   // TODO: correct checksum
-  
-  // uint64_t end = rte_get_timer_cycles();
-  // if(end - start < 60){
-    // sum += end - start;
-    // LOG(INFO) << end - start << " " << ++tot << " " << sum;
-  // }
 }
-
