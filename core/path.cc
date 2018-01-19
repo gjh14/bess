@@ -38,8 +38,8 @@ Path::~Path(){
     free(states[i].arg);
 }
 
-void Path::set_fid(const FID &fid) {
-  fid_ = fid;
+void Path::set_fid(const uint8_t *fid) {
+  memcpy(fid_, fid, FIDLEN);
   clear();
 }
 
@@ -68,12 +68,12 @@ void Path::set_port(Module *port) {
 }
 
 void Path::handlePkt(bess::Packet *pkt){
+  static uint64_t tot = 0, sum = 0;
+  uint64_t start = rte_get_timer_cycles();
+
   bess::PacketBatch unit;
   unit.clear();
   unit.add(pkt, this);
- 
-  static uint64_t tot = 0, sum = 0;
-  uint64_t start = rte_get_timer_cycles();
   /* 
   for(int i = 0; i < cnt_; ++i)
     if(states[i].action!= nullptr && states[i].action(pkt, states[i].arg))

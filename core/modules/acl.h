@@ -74,6 +74,9 @@ class ACL final : public Module {
   StateAction::FUNC sfunc;
   
   std::vector<ACLRule> rules_;
+
+  bool result[MAT::MAX_PATHS];
+  uint8_t cache[MAT::MAX_PATHS][Path::FIDLEN];
 };
 
 #endif  // BESS_MODULES_ACL_H_

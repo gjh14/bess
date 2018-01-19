@@ -5,10 +5,10 @@
 #include <functional> 
 #include <vector>
 
-#include "fid.h"
 #include "utils/endian.h"
 
 namespace bess{
+class Packet;
 class PacketBatch;
 }
 
@@ -56,7 +56,7 @@ class Path {
   static const int MAXLEN = 8;
   static const int FIDLEN = 13;
   
-  Path() : port_(nullptr), cnt_(0) {}
+  Path() : port_(nullptr), cnt_(0) { memset(fid_, 0, FIDLEN); }
   ~Path();
 
   void appendRule(Module *module, HeadAction *&head, StateAction *&state);
@@ -67,12 +67,12 @@ class Path {
   
   void set_port(Module *port);
   Module* port() const { return port_; }
-  void set_fid(const FID &fid);
-  const FID &fid() const { return fid_; }
+  void set_fid(const uint8_t *fid);
+  const uint8_t *fid() const { return fid_; }
   
  private:
   MAT *mat;
-  FID fid_;
+  uint8_t fid_[FIDLEN];
   Module *port_;
   
   int cnt_;

@@ -19,10 +19,14 @@ class MAT {
   void add_module(Module *module);
   void add_port(Module *port);
 
+  static void getFID(bess::Packet *pkt, uint64_t &hash, uint8_t *fid);
+
  private: 
   Path paths[MAX_PATHS];
   std::vector<Module *> modules;
   std::vector<Module *> ports;
+
+  static void append(uint64_t &hash, uint8_t *fid, uint32_t num, int len, int pos);
 };
 
 #endif

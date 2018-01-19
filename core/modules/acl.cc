@@ -48,6 +48,9 @@ ACL::ACL() : Module() {
       ACLArg *check = (ACLArg*)arg;
       return *check != time;
     };
+
+  memset(cache, 0, sizeof(cache));
+  memset(result, 0, sizeof(result));
 }
 
 CommandResponse ACL::Init(const bess::pb::ACLArg &arg) {
@@ -76,6 +79,9 @@ CommandResponse ACL::CommandClear(const bess::pb::EmptyArg &) {
 }
 
 void ACL::ProcessBatch(bess::PacketBatch *batch) {
+  static uint64_t tot = 0, sum = 0;
+  uint64_t start = rte_get_timer_cycles();
+
   using bess::utils::Ethernet;
   using bess::utils::Ipv4;
   using bess::utils::Udp;
@@ -88,17 +94,21 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
     bess::Packet *pkt = batch->pkts()[i];
     Path *path = batch->path(i);
     
-    static uint64_t tot = 0, sum = 0;
-    uint64_t start = rte_get_timer_cycles();
-
     Ethernet *eth = pkt->head_data<Ethernet *>();
     Ipv4 *ip = reinterpret_cast<Ipv4 *>(eth + 1);
     size_t ip_bytes = ip->header_length << 2;
     Udp *udp =
         reinterpret_cast<Udp *>(reinterpret_cast<uint8_t *>(ip) + ip_bytes);
 
+    uint64_t hash = 0;
+    uint8_t fid[Path::FIDLEN];
+    MAT::getFID(pkt, hash, fid);
+    if (!memcmp(fid, cache[hash], Path::FIDLEN)) {
+      out_gates[i] = result[hash] ? DROP_GATE : incoming_gate;
+    }
+
     out_gates[i] = DROP_GATE;  // By default, drop unmatched packets
-    
+
     for (const auto &rule : rules_) {
       if (rule.Match(ip->src, ip->dst, udp->src_port, udp->dst_port)) {
         if (!rule.drop) {
@@ -107,6 +117,9 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
         break;  // Stop matching other rules
       }
     }
+
+    memcpy(cache[hash], fid, Path::FIDLEN);
+    result[hash] = out_gates[i] == DROP_GATE;
 
     if (path == nullptr) {
       HeadAction *head = nullptr;
@@ -120,11 +133,13 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
       *arg = time;
       state->arg = (void *)arg;
     }
-
-    uint64_t end = rte_get_timer_cycles();
-    sum += end - start;
-    LOG(INFO) << end - start << " " << ++tot << " " << sum;
   }
+
+  uint64_t end = rte_get_timer_cycles();
+  tot += cnt;
+  sum += end - start;
+  LOG(INFO) << end - start << " " << tot << " " << sum;
+
   RunSplit(out_gates, batch);
 }
 

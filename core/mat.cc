@@ -12,14 +12,39 @@ MAT::MAT(){
     paths[i].mat = this;
 }
 
+void MAT::getFID(bess::Packet *pkt, uint64_t &hash, uint8_t *fid){
+  uint8_t *protocol = (uint8_t *)pkt + 535;
+  uint32_t *src_ip = (uint32_t *)((uint8_t *)pkt + 538);
+  uint16_t *src_port = (uint16_t *)((uint8_t *) pkt + 546);
+  uint32_t *dst_ip = (uint32_t *)((uint8_t *)pkt + 542);
+  uint16_t *dst_port =  (uint16_t *)((uint8_t *) pkt + 548);
+    
+  append(hash, fid, *protocol, 1, 0); 
+  append(hash, fid, *src_ip, 4, 1); 
+  append(hash, fid, *src_port, 2, 5); 
+  append(hash, fid, *dst_ip, 4, 7); 
+  append(hash, fid, *dst_port, 2, 11);
+}
+
+void MAT::append(uint64_t &hash, uint8_t *fid, uint32_t num, int len, int pos) {
+  hash = ((hash << (len << 3)) | num) % MAX_PATHS;
+  for (int i = 0; i < len; ++i) {
+    fid[pos + i] = num & 255;
+    num >>= 8;
+  }
+}
+
 bool MAT::checkMAT(bess::Packet *pkt, Path *&path) {
   /*static uint64_t tot = 0, sum = 0;
   uint64_t start = rte_get_timer_cycles();*/
+ 
+  uint64_t hash = 0;
+  uint8_t fid[Path::FIDLEN];
 
-  FID fid(pkt);
-  path = paths + fid.hash;
+  getFID(pkt, hash, fid);
+  path = paths + hash;
 
-  if (fid == path->fid())
+  if (!memcmp(fid, path->fid(), Path::FIDLEN))
     return true;
 
   path->set_fid(fid);
