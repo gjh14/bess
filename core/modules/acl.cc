@@ -79,8 +79,7 @@ CommandResponse ACL::CommandClear(const bess::pb::EmptyArg &) {
 }
 
 void ACL::ProcessBatch(bess::PacketBatch *batch) {
-  static uint64_t tot = 0, sum = 0;
-  uint64_t start = rte_get_timer_cycles();
+  static uint64_t to = 0, so = 0, tc = 0, sc = 0;
 
   using bess::utils::Ethernet;
   using bess::utils::Ipv4;
@@ -91,6 +90,8 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
 
   int cnt = batch->cnt();
   for (int i = 0; i < cnt; i++) {
+    uint64_t start = rte_get_timer_cycles();
+
     bess::Packet *pkt = batch->pkts()[i];
     Path *path = batch->path(i);
     
@@ -105,6 +106,11 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
     MAT::getFID(pkt, hash, fid);
     if (!memcmp(fid, cache[hash], Path::FIDLEN)) {
       out_gates[i] = result[hash] ? DROP_GATE : incoming_gate;
+
+      uint64_t end = rte_get_timer_cycles();
+      tc += 1;
+      sc += end - start;
+      continue;
     }
 
     out_gates[i] = DROP_GATE;  // By default, drop unmatched packets
@@ -121,7 +127,7 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
     memcpy(cache[hash], fid, Path::FIDLEN);
     result[hash] = out_gates[i] == DROP_GATE;
 
-    if (path == nullptr) {
+    if (path != nullptr) {
       HeadAction *head = nullptr;
       StateAction *state = nullptr;
       path->appendRule(this, head, state);
@@ -133,12 +139,13 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
       *arg = time;
       state->arg = (void *)arg;
     }
+
+    uint64_t end = rte_get_timer_cycles();
+    to += 1;
+    so += end - start;
   }
 
-  uint64_t end = rte_get_timer_cycles();
-  tot += cnt;
-  sum += end - start;
-  LOG(INFO) << end - start << " " << tot << " " << sum;
+  LOG(INFO) << to << " " << so << " " << tc << " " << sc;
 
   RunSplit(out_gates, batch);
 }

@@ -1,8 +1,0 @@
-port::PMDPort(port_id = 0, num_inc_q = 1, num_out_q = 1)
-snort1::Snort(file = "RULES.SAMPLE")
-snort2::Snort(file = "RULES.SAMPLE")
-snort3::Snort(file = "RULES.SAMPLE")
-snort4::Snort(file = "RULES.SAMPLE")
-snort5::Snort(file = "RULES.SAMPLE")
-QueueInc(port = port, qid = 0) -> snort1 -> snort2 -> snort3 -> snort4 -> snort5 -> QueueOut(port = port, qid = 0)
-

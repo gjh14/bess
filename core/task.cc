@@ -111,7 +111,7 @@ void Task::collect(bess::PacketBatch *batch, Module *module) {
   uint64_t end = rte_get_timer_cycles();
   tot += cnt;
   sum += end - start;
-  LOG(INFO) << end - start << " " << tot << " " << sum;
+  LOG(INFO) << cnt << " " << end - start << " " << tot << " " << sum;
 
   if(hits.cnt())
     gmat.runMAT(&hits);

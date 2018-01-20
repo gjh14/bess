@@ -138,7 +138,7 @@ static void init_eal(const char *prog_name[[maybe_unused]], int mb_per_socket[[m
       // std::to_string(RTE_MAX_LCORE - 1) + "@" + std::to_string(default_core),
       // Do not bother with /var/run/.rte_config and .rte_hugepage_info,
       // since we don't want to interfere with other DPDK applications.
-      "--no-shconf", "-b", "01:00.1",  "-b", "02:00.0", "-b", "02:00.1", "-b" ,"03:00.1", };
+      "--no-shconf", "-b", "03:00.0", "-b" ,"03:00.1", };
 
   if (no_huge) {
     rte_args.Append({"--no-huge"});
