@@ -24,6 +24,8 @@ void MAT::getFID(bess::Packet *pkt, uint64_t &hash, uint8_t *fid){
   append(hash, fid, *src_port, 2, 5); 
   append(hash, fid, *dst_ip, 4, 7); 
   append(hash, fid, *dst_port, 2, 11);
+
+  hash += delay(hash);
 }
 
 void MAT::append(uint64_t &hash, uint8_t *fid, uint32_t num, int len, int pos) {
@@ -32,6 +34,13 @@ void MAT::append(uint64_t &hash, uint8_t *fid, uint32_t num, int len, int pos) {
     fid[pos + i] = num & 255;
     num >>= 8;
   }
+}
+
+int MAT::delay(int x){
+  int res = 1;
+  for(int i = 0; i < 500; ++i)
+   res *= x ^ (x & 1);
+  return res;
 }
 
 bool MAT::checkMAT(bess::Packet *pkt, Path *&path) {
@@ -55,12 +64,42 @@ bool MAT::checkMAT(bess::Packet *pkt, Path *&path) {
 }
 
 void MAT::runMAT(bess::PacketBatch *batch) {
-  int cnt  = batch->cnt();
+  // static uint64_t tot = 0, sum = 0;
+  // uint64_t start = rte_get_timer_cycles();
 
-  for(int i = 0; i < cnt; ++i)
-    batch->path(i)->handlePkt(batch->pkts()[i]);
-/*
-  int first[bess::PacketBatch::kMaxBurst];
+  int cnt  = batch->cnt();
+  bess::PacketBatch out_batch; 
+  bess::PacketBatch free_batch;
+  out_batch.clear();
+  free_batch.clear();
+  bess::PacketBatch unit;
+
+  for (int i = 0; i < cnt; ++i) {
+    bess::Packet *pkt = batch->pkts()[i];
+    Path *path = batch->path(i);
+    if (path->port() == nullptr) {
+      free_batch.add(pkt, nullptr);
+      continue;
+    }
+    
+    unit.clear();
+    for(int j = 0; j < path->cnt_; ++j) {
+      StateAction &state = path->states[j];
+      if (state.action!= nullptr && state.action(pkt, state.arg)){
+        unit.add(pkt, path);        
+        path->rehandle(j, &unit);
+        break;
+      }
+    }
+    
+    if (!unit.cnt()) {
+      // path->handleHead(pkt);
+      out_batch.add(pkt, path);
+    }
+  }
+
+
+  /* int first[bess::PacketBatch::kMaxBurst];
   for(int i = 0; i < cnt; ++i){
     bess::Packet *pkt = batch->pkts()[i];
     Path *path = batch->path(i);
@@ -79,10 +118,7 @@ void MAT::runMAT(bess::PacketBatch *batch) {
       if(parallel->result(i))
         first[parallel->rank(i)] = parallel->pos(i);
   }
-  
-  bess::PacketBatch left;
-  left.clear();
-  bess::PacketBatch unit;
+
   for(int i = 0; i < cnt; ++i){
     bess::Packet *pkt = batch->pkts()[i];
     Path *path = batch->path(i);
@@ -93,26 +129,29 @@ void MAT::runMAT(bess::PacketBatch *batch) {
     }
     else
       left.add(pkt, path);
-  }
+  } */
 
-  cnt = left.cnt();
+  // uint64_t end = rte_get_timer_cycles();
+  // tot += cnt; 
+  // sum += end - start;
+  // LOG(INFO) << cnt << " " << end - start << " " << tot << " " << sum;
+
   bess::PacketBatch send;
   for (Module *port : ports) {
     send.clear();
-    for(int i = 0; i < cnt; ++i)
-      if (left.path(i)->port() == port)
-        send.add(left.pkts()[i], nullptr);
+    for(int i = 0; i < out_batch.cnt(); ++i)
+      if (out_batch.path(i)->port() == port)
+        send.add(out_batch.pkts()[i], nullptr);
     port->ProcessBatch(&send);
   }
-  */
-  // LOG(INFO) << "End: " << cnt;
+  bess::Packet::Free(&free_batch);
 }
 
 void MAT::add_module(Module *module){
   for (Module* module_ : modules)
     if (module_ == module)
       return;
-  LOG(INFO) << "Module " << module;
+  // LOG(INFO) << "Module " << module;
   modules.push_back(module);
 }
 
@@ -120,7 +159,7 @@ void MAT::add_port(Module *port){
   for (Module* port_ : ports)
     if (port_ == port)
       return;
-  LOG(INFO) << "Port " << port;
+  // LOG(INFO) << "Port " << port;
   ports.push_back(port);
 }
 

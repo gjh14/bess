@@ -1,4 +1,5 @@
-port::PMDPort(port_id = 0, num_inc_q = 1, num_out_q = 1)
+port1::PMDPort(port_id = 0, num_inc_q = 1, num_out_q = 1)
+port2::PMDPort(port_id = 1, num_inc_q = 1, num_out_q = 1)
 snort1::Snort(file = "RULES.SAMPLE")
-QueueInc(port = port, qid = 0) -> snort1 -> QueueOut(port = port, qid = 0)
+QueueInc(port = port1, qid = 0) -> snort1 -> QueueOut(port = port2, qid = 0)
 

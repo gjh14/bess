@@ -1504,13 +1504,19 @@ const Commands Snort::cmds = {
      Command::Command::THREAD_UNSAFE}};
 
 Snort::Snort() : Module() {
-  sfunc = [&](bess::Packet *pkt, void *arg[[maybe_unused]]) -> bool {
+  sfunc = [this](bess::Packet *pkt, void *arg[[maybe_unused]]) -> bool {
+      // uint64_t start = rte_get_timer_cycles();
+
       NetData net;
       snort_pktcon(pkt, net);
 
       CheckRules(AlertList, net);
       CheckRules(PassList, net);
       CheckRules(LogList, net);
+      
+      // uint64_t end = rte_get_timer_cycles();
+      // LOG(INFO) << end - start;
+
       return false;
     };
 
@@ -1561,21 +1567,20 @@ void Snort::clear() {
 }
 
 void Snort::ProcessBatch(bess::PacketBatch *batch){
+  // static uint64_t tot = 0, sum = 0;
+  // uint64_t start = rte_get_timer_cycles();
+ 
   int cnt = batch->cnt();
   for (int i = 0; i < cnt; i++) {
     bess::Packet *pkt = batch->pkts()[i];
     Path *path =  batch->path(i);
-/*
-    static uint64_t tot = 0, sum = 0;
-    uint64_t start = rte_get_timer_cycles();
-    start = rte_get_timer_cycles();
-*/
-    NetData net;
-    snort_pktcon(pkt, net);
     
+    NetData net;
+    snort_pktcon(pkt, net);    
     CheckRules(AlertList, net);
     CheckRules(PassList, net);
-    CheckRules(LogList, net);  
+    CheckRules(LogList, net); 
+
     if(path != nullptr){
       HeadAction *head = nullptr;
       StateAction *state = nullptr;
@@ -1584,11 +1589,12 @@ void Snort::ProcessBatch(bess::PacketBatch *batch){
       state->action = sfunc;
       state->arg = nullptr;
     }
-
-    // uint64_t end = rte_get_timer_cycles();
-    // sum += end - start;
-    // LOG(INFO) << end - start << " " << ++tot << " " << sum;
   }
+
+  // uint64_t end = rte_get_timer_cycles();
+  // tot += cnt;
+  // sum += end - start;
+  // LOG(INFO) << cnt << " " << end - start << " " << tot << " " << sum;
 
   RunNextModule(batch);
 }

@@ -67,30 +67,6 @@ void Path::set_port(Module *port) {
   mat->add_port(port);
 }
 
-void Path::handlePkt(bess::Packet *pkt){
-  static uint64_t tot = 0, sum = 0;
-  uint64_t start = rte_get_timer_cycles();
-
-  bess::PacketBatch unit;
-  unit.clear();
-  unit.add(pkt, this);
-  /* 
-  for(int i = 0; i < cnt_; ++i)
-    if(states[i].action!= nullptr && states[i].action(pkt, states[i].arg))
-      rehandle(i, &unit);
-  */
-  handleHead(pkt);
-
-  uint64_t end = rte_get_timer_cycles();
-  sum += end - start;
-  LOG(INFO) << end - start << " " << ++tot << " " << sum;
-
-  if(port_ != nullptr)
-    port_->ProcessBatch(&unit);
-  else
-    bess::Packet::Free(pkt);
-}
-
 void Path::rehandle(int pos, bess::PacketBatch *unit) {
   Module *trigger = modules[pos];
   
@@ -108,8 +84,10 @@ void Path::rehandle(int pos, bess::PacketBatch *unit) {
   trigger->ProcessBatch(unit);
 }
 
-void Path::handleHead(bess::Packet *pkt){
-  if(total.type & HeadAction::DROP){
+void Path::handleHead(bess::Packet *pkt) {
+  if (!total.type)
+    return;
+  if (total.type & HeadAction::DROP) {
     port_ = nullptr;
     return;
   }
@@ -128,3 +106,4 @@ void Path::handleHead(bess::Packet *pkt){
 
   // TODO: correct checksum
 }
+

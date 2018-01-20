@@ -20,6 +20,7 @@ class MAT {
   void add_port(Module *port);
 
   static void getFID(bess::Packet *pkt, uint64_t &hash, uint8_t *fid);
+  static int delay(int x);
 
  private: 
   Path paths[MAX_PATHS];

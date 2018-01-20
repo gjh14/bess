@@ -61,8 +61,6 @@ class Path {
 
   void appendRule(Module *module, HeadAction *&head, StateAction *&state);
   void clear();
-
-  void handlePkt(bess::Packet *pkt);
   void rehandle(int pos, bess::PacketBatch *unit);
   
   void set_port(Module *port);
