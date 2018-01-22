@@ -1445,10 +1445,9 @@ bool Snort::snort_pktcon(struct bess::Packet *pkt, NetData &net){
   using bess::utils::Ethernet;
   using bess::utils::Ipv4;
   Ethernet *eth = pkt->head_data<Ethernet *>();
-  Ipv4 *ip = reinterpret_cast<Ipv4 *>(eth + 1);
-  
+  Ipv4 *ip = reinterpret_cast<Ipv4 *>(eth + 1);  
   uint8_t *d = reinterpret_cast<uint8_t *>(ip);
-  d = d + 14;
+
   net.sip = 0; 
   for(int i = 0;i < 3; i++) {
     net.sip = net.sip + *(d +12 + i);

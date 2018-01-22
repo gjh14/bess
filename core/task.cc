@@ -74,12 +74,12 @@ void Task::AddActiveWorker(int wid) const {
  * GMAT
  */
 void Task::collect(bess::PacketBatch *batch, Module *module) {
-  module->RunNextModule(batch);
+  // module->RunNextModule(batch);
 
   // static uint64_t tot = 0, sum = 0;
   // uint64_t start = rte_get_timer_cycles();
 
-  /* bess::PacketBatch hits;
+  bess::PacketBatch hits;
   hits.clear();
   bess::PacketBatch unhits;
   unhits.clear();
@@ -116,6 +116,6 @@ void Task::collect(bess::PacketBatch *batch, Module *module) {
   if(hits.cnt())
     gmat.runMAT(&hits);
   if(unhits.cnt())
-    module->RunNextModule(&unhits); */
+    module->RunNextModule(&unhits);
 }
 

@@ -83,17 +83,17 @@ void MAT::runMAT(bess::PacketBatch *batch) {
     }
     
     unit.clear();
-    for(int j = 0; j < path->cnt_; ++j) {
+    /* for(int j = 0; j < path->cnt_; ++j) {
       StateAction &state = path->states[j];
       if (state.action!= nullptr && state.action(pkt, state.arg)){
         unit.add(pkt, path);        
         path->rehandle(j, &unit);
         break;
       }
-    }
+    } */
     
     if (!unit.cnt()) {
-      // path->handleHead(pkt);
+      path->handleHead(pkt);
       out_batch.add(pkt, path);
     }
   }

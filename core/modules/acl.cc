@@ -134,10 +134,11 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
       if (out_gates[i] == DROP_GATE)
         head->type = HeadAction::DROP;
       state->type = StateAction::UNRELATE;
-      state->action = sfunc;
-      ACLArg *arg = (ACLArg *)malloc(sizeof(ACLArg));
-      *arg = time;
-      state->arg = (void *)arg;
+      state->action = nullptr;
+      // state->action = sfunc;
+      // ACLArg *arg = (ACLArg *)malloc(sizeof(ACLArg));
+      // *arg = time;
+      // state->arg = (void *)arg;
     }
 
     uint64_t end = rte_get_timer_cycles();
