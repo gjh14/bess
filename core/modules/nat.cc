@@ -194,6 +194,7 @@ NAT::HashTable::Entry *NAT::CreateNewEntry(const Endpoint &src_internal,
     uint16_t range;  // consider [min, min + range) port range
     // Avoid allocation from an unusable range. We do this even when a range is
     // already in use since we might want to reclaim it once flows die out.
+
     if (port_range.suspended) {
       continue;
     }
@@ -202,7 +203,7 @@ NAT::HashTable::Entry *NAT::CreateNewEntry(const Endpoint &src_internal,
       min = port_range.begin;
       range = port_range.end - port_range.begin;
     } else {
-      if (src_internal.port == be16_t(0)) {
+      if (src_internal.port == be16_t(1)) { //0
         // ignore port number 0
         return nullptr;
       } else if (src_internal.port & ~be16_t(1023)) {
@@ -225,7 +226,7 @@ NAT::HashTable::Entry *NAT::CreateNewEntry(const Endpoint &src_internal,
     uint16_t start_port = min + rng_.GetRange(range);
     uint16_t port = start_port;
     int trials = 0;
-
+    
     do {
       src_external.port = be16_t(port);
       auto *hash_reverse = map_.Find(src_external);
@@ -342,7 +343,19 @@ inline void NAT::DoProcessBatch(bess::PacketBatch *batch) {
 
   for (int i = 0; i < cnt; i++) {
     bess::Packet *pkt = batch->pkts()[i];
+    MAT::mark(pkt);
     Path *path = batch->path(i);
+   
+    uint64_t hash = 0;
+    uint8_t fid[Path::FIDLEN];
+    MAT::getFID(pkt, hash, fid);
+    if (memcmp(fid, cache[hash], Path::FIDLEN)) {
+      int delay = 1;
+      for(int j = 0; j < 700; ++j)
+        delay *= i ^ (i & 1);
+      i += delay;
+    }
+    memcpy(cache[hash], fid, Path::FIDLEN); 
     
     HeadAction* head = nullptr;
     StateAction* state = nullptr;
@@ -369,6 +382,7 @@ inline void NAT::DoProcessBatch(bess::PacketBatch *batch) {
     }
 
     auto *hash_item = map_.Find(before);
+    // LOG(INFO) << before.addr << " " << before.port << " " << before.protocol;
 
     if (hash_item == nullptr) {
       if (dir != kForward || !(hash_item = CreateNewEntry(before, now))) {
@@ -387,7 +401,11 @@ inline void NAT::DoProcessBatch(bess::PacketBatch *batch) {
     Stamp<dir>(ip, l4, before, hash_item->second.endpoint, head);
     
     out_batch.add(pkt, path);
+    
+    MAT::stat(pkt);
   }
+
+  // LOG(INFO) << cnt << " " << out_batch.cnt() << " " << free_batch.cnt();
 
   bess::Packet::Free(&free_batch);
 

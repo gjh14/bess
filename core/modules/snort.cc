@@ -1516,7 +1516,10 @@ Snort::Snort() : Module() {
       // uint64_t end = rte_get_timer_cycles();
       // LOG(INFO) << end - start;
 
-      return false;
+      int delay = 1, i = *(int*)pkt;
+      for(int j = 0; j < 2400; ++j)
+        delay *= i ^ (i & 1);
+      return delay;
     };
 
   // parallel()->remote();
@@ -1572,8 +1575,14 @@ void Snort::ProcessBatch(bess::PacketBatch *batch){
   int cnt = batch->cnt();
   for (int i = 0; i < cnt; i++) {
     bess::Packet *pkt = batch->pkts()[i];
+    MAT::mark(pkt);
     Path *path =  batch->path(i);
     
+    int delay = 1;
+    for(int j = 0; j < 3000; ++j)
+      delay *= i ^ (i & 1);
+    i += delay;
+
     NetData net;
     snort_pktcon(pkt, net);    
     CheckRules(AlertList, net);
@@ -1588,6 +1597,8 @@ void Snort::ProcessBatch(bess::PacketBatch *batch){
       state->action = sfunc;
       state->arg = nullptr;
     }
+    
+    MAT::stat(pkt);
   }
 
   // uint64_t end = rte_get_timer_cycles();

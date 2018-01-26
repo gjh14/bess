@@ -22,13 +22,21 @@ class MAT {
   static void getFID(bess::Packet *pkt, uint64_t &hash, uint8_t *fid);
   static int delay(int x);
 
+  static void init();
+  static void mark(bess::Packet *pkt);
+  static void stat(bess::Packet *pkt);
+  static void output();
+
  private: 
   Path paths[MAX_PATHS];
   std::vector<Module *> modules;
   std::vector<Module *> ports;
 
   static void append(uint64_t &hash, uint8_t *fid, uint32_t num, int len, int pos);
+
+  static uint64_t tot[65536];
+  static uint64_t sum[65536];
+  static uint64_t start[65536];
 };
-
+  
 #endif
-

@@ -101,10 +101,19 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
   int cnt = batch->cnt();
   for (int i = 0; i < cnt; i++) {
     bess::Packet *pkt = batch->pkts()[i];
+    MAT::mark(pkt);
     Path *path = batch->path(i);
 
-    static uint64_t tot = 0, sum = 0;
-    uint64_t start = rte_get_timer_cycles();
+    uint64_t hval = 0;
+    uint8_t fid[Path::FIDLEN];
+    MAT::getFID(pkt, hval, fid);
+    if (memcmp(fid, cache[hval], Path::FIDLEN)) {
+      int delay = 1;
+      for(int j = 0; j < 650; ++j)
+        delay *= i ^ (i & 1);
+      i += delay; 
+    }
+    memcpy(cache[hval], fid, Path::FIDLEN);
 
     HeadAction *head = nullptr;
     StateAction *state = nullptr;
@@ -126,28 +135,25 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
       free_batch.add(pkt, nullptr);
     } else {
       *dst_ip = dsts[gate].dst_ip;
-      *dst_port = dsts[gate].dst_port;
+      *dst_port = *dst_port; // dsts[gate].dst_port;
       if (head != nullptr) {
         head->modify(HeadAction::DST_IP, dsts[gate].dst_ip);
-        head->modify(HeadAction::DST_PORT, dsts[gate].dst_port); 
+        head->modify(HeadAction::DST_PORT, *dst_port); // dsts[gate].dst_port); 
       }
       out_batch.add(pkt, path);
     }
-    /*
+    
     if (state != nullptr) {
-      MaglevArg *arg = (MaglevArg *)malloc(sizeof(MaglevArg));
       state->type = StateAction::UNRELATE;
-      state->action = sfunc; 
+      state->action = nullptr;
+      /* MaglevArg *arg = (MaglevArg *)malloc(sizeof(MaglevArg));    
+      state->action = sfunc;
       arg->value = value;
       arg->gate = gate;
-      state->arg = (void*)arg;
+      state->arg = (void*)arg; */
     }
-    */
-    int delay = i;
-    for(int j = 0; j < 200; ++j) delay *= i | 1;
-    uint64_t end = rte_get_timer_cycles();
-    sum += end - start;
-    LOG(INFO) << end - start << " " << ++tot << " " << sum << " " << delay;
+    
+    MAT::stat(pkt);
   }
 
   bess::Packet::Free(&free_batch);

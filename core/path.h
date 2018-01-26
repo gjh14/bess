@@ -53,7 +53,7 @@ class Path {
  public:
   friend class MAT;
    
-  static const int MAXLEN = 8;
+  static const int MAXLEN = 10;
   static const int FIDLEN = 13;
   
   Path() : port_(nullptr), cnt_(0) { memset(fid_, 0, FIDLEN); }

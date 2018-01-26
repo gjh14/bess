@@ -44,6 +44,8 @@ class Maglev final: public Module {
 
   uint32_t hash(uint8_t protocol, uint32_t src_ip, uint16_t src_port, uint32_t dst_ip, uint16_t dst_port);
   void build();
+
+  uint8_t cache[MAT::MAX_PATHS][Path::FIDLEN];
 };
 
 #endif

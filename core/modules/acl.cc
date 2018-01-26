@@ -79,8 +79,6 @@ CommandResponse ACL::CommandClear(const bess::pb::EmptyArg &) {
 }
 
 void ACL::ProcessBatch(bess::PacketBatch *batch) {
-  static uint64_t to = 0, so = 0, tc = 0, sc = 0;
-
   using bess::utils::Ethernet;
   using bess::utils::Ipv4;
   using bess::utils::Udp;
@@ -90,9 +88,9 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
 
   int cnt = batch->cnt();
   for (int i = 0; i < cnt; i++) {
-    uint64_t start = rte_get_timer_cycles();
-
     bess::Packet *pkt = batch->pkts()[i];
+    MAT::mark(pkt);
+    
     Path *path = batch->path(i);
     
     Ethernet *eth = pkt->head_data<Ethernet *>();
@@ -106,10 +104,7 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
     MAT::getFID(pkt, hash, fid);
     if (!memcmp(fid, cache[hash], Path::FIDLEN)) {
       out_gates[i] = result[hash] ? DROP_GATE : incoming_gate;
-
-      uint64_t end = rte_get_timer_cycles();
-      tc += 1;
-      sc += end - start;
+      MAT::stat(pkt);
       continue;
     }
 
@@ -141,12 +136,8 @@ void ACL::ProcessBatch(bess::PacketBatch *batch) {
       // state->arg = (void *)arg;
     }
 
-    uint64_t end = rte_get_timer_cycles();
-    to += 1;
-    so += end - start;
+    MAT::stat(pkt);
   }
-
-  LOG(INFO) << to << " " << so << " " << tc << " " << sc;
 
   RunSplit(out_gates, batch);
 }

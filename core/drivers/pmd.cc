@@ -30,6 +30,7 @@
 
 #include "pmd.h"
 
+#include <rte_cycles.h>
 #include <rte_ethdev_pci.h>
 
 #include "../utils/ether.h"
@@ -386,7 +387,11 @@ void PMDPort::CollectStats(bool reset) {
   }
 }
 
+// static uint64_t tot = 0, sum = 0, start = 0, end = 0;
+
 int PMDPort::RecvPackets(queue_t qid, bess::Packet **pkts, int cnt) {
+  // start = rte_get_timer_cycles(); 
+
   return rte_eth_rx_burst(dpdk_port_id_, qid, (struct rte_mbuf **)pkts, cnt);
 }
 
@@ -395,6 +400,11 @@ int PMDPort::SendPackets(queue_t qid, bess::Packet **pkts, int cnt) {
       rte_eth_tx_burst(dpdk_port_id_, qid, (struct rte_mbuf **)pkts, cnt);
 
   queue_stats[PACKET_DIR_OUT][qid].dropped += (cnt - sent);
+
+  // end = rte_get_timer_cycles(); 
+  // tot += sent;
+  // sum += end - start;
+  // LOG(INFO) << sent << " " << end - start << " " << tot << " " << sum; 
 
   return sent;
 }
