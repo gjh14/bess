@@ -74,13 +74,16 @@ void Task::AddActiveWorker(int wid) const {
  * GMAT
  */
 void Task::collect(bess::PacketBatch *batch, Module *module) {
-  static uint64_t tot = 0;
+  /* static uint64_t tot = 0;
   if (!tot)
-    MAT::init();
+    MAT::init();*/
 
   // module->RunNextModule(batch);
 
+  /* static uint64_t a = 0, b = 0;
+  uint64_t c = rte_get_timer_cycles(); */
   int cnt = batch->cnt();
+
   bess::PacketBatch hits;
   hits.clear();
   bess::PacketBatch unhits;
@@ -88,7 +91,7 @@ void Task::collect(bess::PacketBatch *batch, Module *module) {
   
   for (int i = 0; i < cnt; ++i) {
     bess::Packet *pkt = batch->pkts()[i];
-    MAT::mark(pkt);
+    // MAT::mark(pkt);
     
     Path *path = nullptr;
     bool flag = gmat.checkMAT(pkt, path);
@@ -111,18 +114,23 @@ void Task::collect(bess::PacketBatch *batch, Module *module) {
       path->clear();
     }
     
-    MAT::stat(pkt);
+    // MAT::stat(pkt);
   }
+
+  /* uint64_t d = rte_get_timer_cycles();
+  a += cnt;
+  b += d - c;
+  LOG(INFO) << cnt << " " << d - c << " " << a << " " << b; */
 
   if(unhits.cnt())
     module->RunNextModule(&unhits); 
   if(hits.cnt())
     gmat.runMAT(&hits);
 
-  tot += cnt;
+  /* tot += cnt;
   if (tot == 311625) {
     MAT::output();
     MAT::init();
-  }
+  } */
 }
 

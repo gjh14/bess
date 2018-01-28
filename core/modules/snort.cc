@@ -1517,7 +1517,7 @@ Snort::Snort() : Module() {
       // LOG(INFO) << end - start;
 
       int delay = 1, i = *(int*)pkt;
-      for(int j = 0; j < 2400; ++j)
+      for(int j = 0; j < 2000; ++j)
         delay *= i ^ (i & 1);
       return delay;
     };
@@ -1579,7 +1579,7 @@ void Snort::ProcessBatch(bess::PacketBatch *batch){
     Path *path =  batch->path(i);
     
     int delay = 1;
-    for(int j = 0; j < 3000; ++j)
+    for(int j = 0; j < 2850; ++j)
       delay *= i ^ (i & 1);
     i += delay;
 

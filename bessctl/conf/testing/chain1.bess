@@ -1,0 +1,18 @@
+port1::PMDPort(port_id = 0, num_inc_q = 1, num_out_q = 1)
+port2::PMDPort(port_id = 1, num_inc_q = 1, num_out_q = 1)
+
+nat_config = [{'ext_addr': '192.168.0.1'}, {'ext_addr': '192.168.0.2'}]
+nat::NAT(ext_addrs=nat_config)
+
+lb::Maglev(size = 7, dsts=[{'dst_ip': '1.2.3.4', 'dst_port': 5}, {'dst_ip': '1.2.3.4', 'dst_port': 6},  {'dst_ip': '1.2.3.4', 'dst_port': 7}])
+
+monitor::Monitor()
+
+rules = []
+for i in range(200) :
+  rules.append({'src_ip': '255.0.0.0/32', 'drop': False})
+rules.append({'src_ip': '0.0.0.0/0', 'drop': False})
+fw::ACL(rules = rules)
+
+QueueInc(port = port1, qid = 0) -> nat -> lb -> monitor -> fw -> QueueOut(port = port2, qid = 0)
+

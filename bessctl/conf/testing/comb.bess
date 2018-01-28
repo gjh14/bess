@@ -1,0 +1,5 @@
+port1::PMDPort(port_id = 0, num_inc_q = 1, num_out_q = 1)
+port2::PMDPort(port_id = 1, num_inc_q = 1, num_out_q = 1)
+
+QueueInc(port = port1, qid = 0) -> Monitor() -> Snort(file = "RULES.SAMPLE") -> QueueOut(port = port2, qid = 0)
+

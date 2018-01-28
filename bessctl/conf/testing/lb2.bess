@@ -1,0 +1,9 @@
+port1::PMDPort(port_id = 0, num_inc_q = 1, num_out_q = 1)
+port2::PMDPort(port_id = 1, num_inc_q = 1, num_out_q = 1)
+
+lb1::Maglev(size = 7, dsts=[{'dst_ip': '1.2.3.4', 'dst_port': 5}, {'dst_ip': '1.2.3.4', 'dst_port': 6},  {'dst_ip': '1.2.3.4', 'dst_port': 7}])
+lb2::Maglev(size = 7, dsts=[{'dst_ip': '1.2.3.4', 'dst_port': 5}, {'dst_ip': '1.2.3.4', 'dst_port': 6},  {'dst_ip': '1.2.3.4', 'dst_port': 7}])
+
+QueueInc(port = port1, qid = 0) -> lb1 
+lb1 -> lb2
+lb2 -> QueueOut(port = port2, qid = 0)

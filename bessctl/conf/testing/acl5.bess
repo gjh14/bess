@@ -1,0 +1,17 @@
+port1::PMDPort(port_id = 0, num_inc_q = 1, num_out_q = 1)
+port2::PMDPort(port_id = 1, num_inc_q = 1, num_out_q = 1)
+
+rules = []
+for i in range(350) :
+  rules.append({'src_ip': '0.0.0.0/32', 'drop': False})
+rules.append({'src_ip': '0.0.0.0/0', 'drop': False})
+
+fw1::ACL(rules = rules)
+fw2::ACL(rules = rules)
+fw3::ACL(rules = rules)
+fw4::ACL(rules = rules)
+fw5::ACL(rules = rules)
+
+QueueInc(port = port1, qid = 0) -> fw1 
+fw1 -> fw2 -> fw3 -> fw4 -> fw5
+fw5 -> QueueOut(port = port2, qid = 0)

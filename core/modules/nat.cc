@@ -31,6 +31,7 @@
 
 #include <algorithm>
 #include <numeric>
+#include <rte_cycles.h>
 #include <string>
 
 #include "../utils/checksum.h"
@@ -203,7 +204,7 @@ NAT::HashTable::Entry *NAT::CreateNewEntry(const Endpoint &src_internal,
       min = port_range.begin;
       range = port_range.end - port_range.begin;
     } else {
-      if (src_internal.port == be16_t(1)) { //0
+      if (src_internal.port == be16_t(0)) { // 1
         // ignore port number 0
         return nullptr;
       } else if (src_internal.port & ~be16_t(1023)) {
@@ -333,6 +334,9 @@ inline void Stamp(Ipv4 *ip, void *l4, const Endpoint &before,
 
 template <NAT::Direction dir>
 inline void NAT::DoProcessBatch(bess::PacketBatch *batch) {
+  static uint64_t a = 0, b = 0;
+  uint64_t c = rte_get_timer_cycles();
+
   bess::PacketBatch out_batch;
   bess::PacketBatch free_batch;
   out_batch.clear();
@@ -343,20 +347,9 @@ inline void NAT::DoProcessBatch(bess::PacketBatch *batch) {
 
   for (int i = 0; i < cnt; i++) {
     bess::Packet *pkt = batch->pkts()[i];
-    MAT::mark(pkt);
+    // MAT::mark(pkt);
     Path *path = batch->path(i);
    
-    uint64_t hash = 0;
-    uint8_t fid[Path::FIDLEN];
-    MAT::getFID(pkt, hash, fid);
-    if (memcmp(fid, cache[hash], Path::FIDLEN)) {
-      int delay = 1;
-      for(int j = 0; j < 700; ++j)
-        delay *= i ^ (i & 1);
-      i += delay;
-    }
-    memcpy(cache[hash], fid, Path::FIDLEN); 
-    
     HeadAction* head = nullptr;
     StateAction* state = nullptr;
     if (path != nullptr) {
@@ -382,7 +375,10 @@ inline void NAT::DoProcessBatch(bess::PacketBatch *batch) {
     }
 
     auto *hash_item = map_.Find(before);
-    // LOG(INFO) << before.addr << " " << before.port << " " << before.protocol;
+    int delay = 1;
+    for(int j = 0; j < 500; ++j)
+      delay *= i ^ (i & 1);
+    i += delay;
 
     if (hash_item == nullptr) {
       if (dir != kForward || !(hash_item = CreateNewEntry(before, now))) {
@@ -402,10 +398,14 @@ inline void NAT::DoProcessBatch(bess::PacketBatch *batch) {
     
     out_batch.add(pkt, path);
     
-    MAT::stat(pkt);
+    // MAT::stat(pkt);
   }
 
-  // LOG(INFO) << cnt << " " << out_batch.cnt() << " " << free_batch.cnt();
+  uint64_t d = rte_get_timer_cycles();
+  a += cnt;
+  b += d - c;
+  LOG(INFO) << cnt << " " << d - c << " " << a << " " << b;
+
 
   bess::Packet::Free(&free_batch);
 

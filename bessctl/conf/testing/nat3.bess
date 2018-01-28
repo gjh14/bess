@@ -1,0 +1,12 @@
+port1::PMDPort(port_id = 0, num_inc_q = 1, num_out_q = 1)
+port2::PMDPort(port_id = 1, num_inc_q = 1, num_out_q = 1)
+
+nat_config = [{'ext_addr': '192.168.0.1'}, {'ext_addr': '192.168.0.2'}]
+nat1::NAT(ext_addrs=nat_config)
+nat2::NAT(ext_addrs=nat_config)
+nat3::NAT(ext_addrs=nat_config)
+
+
+QueueInc(port = port1, qid = 0) -> 0:nat1 
+nat1:0 -> 0:nat2:0 -> 0:nat3
+nat3:0 -> QueueOut(port = port2, qid = 0)

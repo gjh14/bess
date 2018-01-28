@@ -58,8 +58,8 @@ bool MAT::checkMAT(bess::Packet *pkt, Path *&path) {
 }
 
 void MAT::runMAT(bess::PacketBatch *batch) {
-  // static uint64_t a = 0, b = 0;
-  // uint64_t c = rte_get_timer_cycles();
+  /* static uint64_t a = 0, b = 0;
+  uint64_t c = rte_get_timer_cycles(); */
   
   int cnt  = batch->cnt();
   bess::PacketBatch out_batch; 
@@ -70,7 +70,7 @@ void MAT::runMAT(bess::PacketBatch *batch) {
 
   for (int i = 0; i < cnt; ++i) {
     bess::Packet *pkt = batch->pkts()[i];
-    mark(pkt);
+    // mark(pkt);
      
     Path *path = batch->path(i);
     if (path->port() == nullptr) {
@@ -96,13 +96,13 @@ void MAT::runMAT(bess::PacketBatch *batch) {
         out_batch.add(pkt, path);
     }
     
-    stat(pkt);
+    // stat(pkt);
   }
  
-  // uint64_t d = rte_get_timer_cycles();
-  // a += cnt;
-  // b += d - c;
-  // LOG(INFO) << cnt << " " << d - c << " " << a << " " << b;
+  /* uint64_t d = rte_get_timer_cycles();
+  a += cnt;
+  b += d - c;
+  LOG(INFO) << cnt << " " << d - c << " " << a << " " << b; */
    
   bess::PacketBatch send;
   for (Module *port : ports) {

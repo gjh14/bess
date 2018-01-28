@@ -176,8 +176,6 @@ class NAT final : public Module {
 
   HashTable map_;
   Random rng_;
-
-  uint8_t cache[MAT::MAX_PATHS][Path::FIDLEN];
 };
 
 #endif  // BESS_MODULES_NAT_H_

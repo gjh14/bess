@@ -93,6 +93,9 @@ uint32_t Maglev::hash(uint8_t protocol, uint32_t src_ip, uint16_t src_port, uint
 }
 
 void Maglev::ProcessBatch(bess::PacketBatch *batch) {
+  static uint64_t a = 0, b = 0;
+  uint64_t c = rte_get_timer_cycles();
+
   bess::PacketBatch out_batch;
   out_batch.clear();
   bess::PacketBatch free_batch;
@@ -101,7 +104,7 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
   int cnt = batch->cnt();
   for (int i = 0; i < cnt; i++) {
     bess::Packet *pkt = batch->pkts()[i];
-    MAT::mark(pkt);
+    // MAT::mark(pkt);
     Path *path = batch->path(i);
 
     uint64_t hval = 0;
@@ -153,8 +156,13 @@ void Maglev::ProcessBatch(bess::PacketBatch *batch) {
       state->arg = (void*)arg; */
     }
     
-    MAT::stat(pkt);
+    // MAT::stat(pkt);
   }
+
+  uint64_t d = rte_get_timer_cycles();
+  a += cnt;
+  b += d - c;
+  LOG(INFO) << cnt << " " << d - c << " " << a << " " << b;
 
   bess::Packet::Free(&free_batch);
   
